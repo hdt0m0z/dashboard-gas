@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCADA - Giám Sát Khí Thải (Realtime Hub)</title>
+    <!-- SCADA Master Styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Toastify cho Alerts Cảnh Báo theo yêu cầu -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <!-- Chart.js & WebSockets -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script> <!-- Load from Backend Socket.IO -->
+    
+    <!-- i18next -->
+    <script src="https://unpkg.com/i18next@23.10.1/i18next.min.js"></script>
+</head>
+<body>
+    <!-- Ứng dụng SPA (Single Page Application) mount root ở đây -->
+    <div id="root"></div>
+
+    <script type="module" src="/js/app.js"></script>
+</body>
+</html>
