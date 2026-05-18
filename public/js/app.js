@@ -1,4 +1,4 @@
-import { LoginPage, RegisterPage, SidebarLayout, DashboardPage, BlankPage, SettingsPage, NetworkPage, DevicesPage } from './pages.js';
+import { LoginPage, RegisterPage, SidebarLayout, DashboardPage, BlankPage, SettingsPage, NetworkPage, DevicesPage,AccessControlPage,ReportPage } from './pages.js';
 
 // --- SYSTEM STATE ---
 // Bắt dữ liệu JWT Token nếu Google OAuth trả về qua link redirection
@@ -11,10 +11,13 @@ if (loginToken) {
 }
 
 const state = {
-    token: localStorage.getItem('scada_token') || null,
+token: localStorage.getItem('scada_token') || null,
     socket: null,
-    currentRoom: null,
-    chartInstance: null
+    currentRoom: null, // Vẫn giữ cho tính năng chọn Gateway
+    dashboard: {
+        charts: { so2: null, pm10: null, pm25: null, pm1: null },
+        maxDataPoints: 20 // Giới hạn số điểm trên biểu đồ live
+    },
 };
 
 // --- DOM ROOT ---
@@ -43,6 +46,24 @@ const navigate = (path) => {
 // Bind to window for inline HTML onclick handlers since app.js is an ES6 module
 window.navigate = navigate;
 window.showToast = showToast;
+
+window.submitAddGateway = () => {
+    const gwId = document.getElementById('newGwId').value.trim();
+    const pwd = document.getElementById('newGwPassword').value.trim();
+    
+    if (!gwId || !pwd) {
+        showToast('Vui lòng nhập đầy đủ ID và Mật khẩu Gateway');
+        return;
+    }
+
+    // Giả lập xử lý thành công
+    showToast(`Đã gửi yêu cầu thêm Gateway: ${gwId}`);
+    
+    // Xóa form và ẩn modal
+    document.getElementById('newGwId').value = '';
+    document.getElementById('newGwPassword').value = '';
+    document.getElementById('addGatewayModal').style.display = 'none';
+};
 
 const handleRoute = () => {
     const path = window.location.hash.replace('#', '') || '/';
@@ -95,10 +116,14 @@ const renderRoute = (path) => {
             loadDevicesData();
             break;
         case '/share':
-            contentArea.innerHTML = BlankPage('🔗 Chia sẻ quyền', 'Khung nhập email để share quyền xem dashboard với Operator khác.');
+            contentArea.innerHTML = AccessControlPage;
             break;
         case '/network':
             contentArea.innerHTML = NetworkPage;
+            loadNetworkData();
+            break;
+        case '/report':
+            contentArea.innerHTML = ReportPage;
             loadNetworkData();
             break;
         case '/settings':
@@ -294,46 +319,59 @@ const setupSidebarEvents = (currentPath) => {
 
 // --- SCADA MAIN LOGIC ---
 const initSCADADashboard = () => {
-    // 1. Vẽ Biểu Đồ Config
-    const ctx = document.getElementById('historyChart').getContext('2d');
-    state.chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [
-                { label: 'SO2 (ppm)', borderColor: '#4fc3f7', backgroundColor: '#4fc3f7', data: [], tension: 0.4 },
-                { label: 'PM2.5 (µg/m³)', borderColor: '#ffb74d', backgroundColor: '#ffb74d', data: [], tension: 0.4 }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false, color: '#fff',
-            scales: {
-                x: { ticks: { color: '#ccc' }, grid: { color: '#333' } },
-                y: { ticks: { color: '#ccc' }, grid: { color: '#333' }, suggestedMax: 150 }
+    Chart.defaults.color = '#9ca3af';
+    Chart.defaults.font.family = "'Consolas', monospace";
+
+    const createChart = (canvasId, label, color) => {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        return new Chart(ctx, {
+            type: 'line',
+            data: { 
+                labels: [], 
+                datasets: [
+                    { label: `${label} Zone A`, data: [], borderColor: '#22d3ee', backgroundColor: 'transparent', borderWidth: 2, tension: 0.3 },
+                    { label: `${label} Zone B`, data: [], borderColor: '#fbbf24', backgroundColor: 'transparent', borderWidth: 2, tension: 0.3 }
+                ] 
             },
-            plugins: {
-                title: { display: true, text: 'BIỂU ĐỒ SCADA THỜI GIAN THỰC', color: '#fff', font: { size: 16 } }
+            options: { 
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } }, // Ẩn legend vì đã có chú thích ở trên panel
+                scales: { 
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { maxTicksLimit: 5 } }, 
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' } } 
+                } 
             }
-        }
-    });
+        });
+    };
 
-    // 3. Cho phép Admin nhảy giữa các trạm để theo dõi ống khói khác nhau
-    document.getElementById('btn-subscribe').addEventListener('click', () => {
-        const targetId = document.getElementById('targetDeviceId').value.trim();
-        if (!targetId) return;
+    // Khởi tạo 4 biểu đồ
+    state.dashboard.charts.so2 = createChart('chart-so2', 'SO2', '#22d3ee');
+    state.dashboard.charts.pm10 = createChart('chart-pm10', 'PM10', '#10b981');
+    state.dashboard.charts.pm25 = createChart('chart-pm25', 'PM2.5', '#fbbf24');
+    state.dashboard.charts.pm1 = createChart('chart-pm1', 'PM1.0', '#9ca3af');
 
-        if (state.socket) {
-            if (state.currentRoom) state.socket.emit('leave_device', state.currentRoom);
-            state.socket.emit('join_device', targetId);
-            state.currentRoom = targetId;
-            showToast("Theo dõi Live: " + targetId);
+    // --- ĐỊNH NGHĨA CÁC HÀM TỪ GIAO DIỆN HTML ---
+    window.setTimeRange = (chartId, points, btnElement) => {
+        state.dashboard.maxDataPoints = points;
+        // Đổi UI nút bấm
+        const container = btnElement.parentElement;
+        container.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+        showToast(`Đã chuyển sang chế độ hiển thị ${btnElement.innerText}`);
+    };
 
-            // Xóa chart khi đổi node
-            state.chartInstance.data.labels = [];
-            state.chartInstance.data.datasets.forEach(d => d.data = []);
-            state.chartInstance.update();
-        }
-    });
+    window.applyZoneFilter = (zone) => {
+        // Mở rộng sau: Ẩn/hiện dataset tương ứng trong Chart dựa vào value 'all', 'z1', 'z2'
+        showToast(`Đang lọc hiển thị: ${zone}`);
+    };
+
+    window.applyAlertFilter = () => { /* Logic lọc bảng nhật ký */ };
+    window.updateStatsChart = () => { /* Logic cập nhật biểu đồ thống kê lưu lượng */ };
+    window.updateUptimeChart = () => { /* Logic biểu đồ độ ổn định */ };
+
+    // Mặc định ép cả 2 trạm thành Offline lúc vừa mở trang
+    setZoneOffline(1);
+    setZoneOffline(2);
 };
 
 const setupSocket = () => {
@@ -359,7 +397,14 @@ const setupSocket = () => {
                 state.currentRoom = targetId;
             }
         });
-
+        state.socket.on('disconnect', () => {
+            showToast('Mất kết nối tới Server!', true);
+            // Ép cả 2 trạm trên Dashboard thành Offline
+            if (document.getElementById('pipe-1')) {
+                setZoneOffline(1);
+                setZoneOffline(2);
+            }
+        });
         state.socket.on('connect_error', (err) => {
             showToast('Lỗi JWT Token hoặc Timeout: ' + err.message, true);
             const led = document.getElementById('gw-server-led');
@@ -370,10 +415,20 @@ const setupSocket = () => {
                 text.innerText = 'WebSocket Server: MẤT KẾT NỐI';
                 text.style.color = 'var(--color-danger)';
             }
+            if (document.getElementById('pipe-1')) {
+                setZoneOffline(1);
+                setZoneOffline(2);
+            }
         });
 
         // Xử lý Lệnh Cập nhật Trạng thái Gateway
         state.socket.on('gateway_status', (data) => {
+            if (data.status === 'offline') {
+                if (document.getElementById('pipe-1')) {
+                    setZoneOffline(1);
+                    setZoneOffline(2);
+                }
+            }
             console.log(`[CLIENT-DEBUG] Nhận được 'gateway_status' tiếp sức từ Server cho phòng: ${data.deviceId}`, data);
 
             const statusEl = document.getElementById(`status-${data.deviceId}`);
@@ -406,53 +461,136 @@ const setupSocket = () => {
         });
     }
 };
+// Hàm chuyển giao diện của 1 Zone về trạng thái Offline (Màu xám)
+const setZoneOffline = (zId) => {
+    // 1. Đổi chữ trạng thái
+    const statusEl = document.getElementById(`status-${zId}`);
+    if (statusEl) {
+        statusEl.innerText = '○ OFFLINE';
+        statusEl.style.color = 'var(--text-dim)'; // Màu xám
+    }
 
+    // 2. Đổi màu ống khói thành xám và tắt hiệu ứng phát sáng
+    const pipe = document.getElementById(`pipe-${zId}`);
+    const base = document.getElementById(`base-${zId}`);
+    if (pipe) {
+        pipe.style.borderColor = 'var(--text-dim)';
+        pipe.style.boxShadow = 'none';
+    }
+    if (base) {
+        base.style.borderColor = 'var(--text-dim)';
+    }
+
+    // 3. Đổi màu viền của các ô dữ liệu thành xám
+    ['so2', 'pm25', 'pm10', 'pm1'].forEach(param => {
+        const cell = document.getElementById(`cell-${param}-${zId}`);
+        if (cell) cell.style.borderLeftColor = 'var(--glass-border)';
+    });
+
+    // 4. (Tùy chọn) Chuyển dữ liệu về -- nếu muốn
+    // document.getElementById(`val-so2-${zId}`).innerText = '--';
+    // document.getElementById(`val-pm25-${zId}`).innerText = '--';
+};
 const updateDashboardUI = (data) => {
-    const { SO2, PM2_5, timestamp, deviceId } = data;
+    // Dữ liệu giả định từ payload MQTT/Socket
+    const { SO2, PM2_5, PM10, PM1, timestamp, node } = data; 
+    
+    // Node 1 là Zone A, Node 2 là Zone B
+    const zId = (node === 1 || node === 'A') ? 1 : 2;
 
-    // Đảm bảo không render nhầm data node khác
-    if (state.currentRoom !== deviceId) return;
-
-    // Bảo vệ DOM nếu đang không nằm ở trang chứa Sensor UI
-    if (!document.getElementById("param-so2-1")) return;
-
-    document.getElementById("param-so2-1").innerText = "SO2: " + SO2 + " ppm";
-    document.getElementById("param-pm25-1").innerText = "PM2.5: " + PM2_5 + " µg/m³";
+    // Bảo vệ DOM: Kiểm tra xem user có đang ở trang Dashboard không
+    if (!document.getElementById(`val-so2-${zId}`)) return;
+    // Khi có data tới, chuyển status thành ONLINE màu xanh
+    const statusEl = document.getElementById(`status-${zId}`);
+    if (statusEl) {
+        statusEl.innerText = '● CONNECTED';
+        statusEl.style.color = 'var(--safe-glow)';
+    }
+    // 1. Cập nhật Số liệu Text
+    document.getElementById(`val-so2-${zId}`).innerText = SO2.toFixed(1);
+    document.getElementById(`val-pm25-${zId}`).innerText = PM2_5.toFixed(1);
+    document.getElementById(`val-pm10-${zId}`).innerText = (PM10 || 0).toFixed(1);
+    document.getElementById(`val-pm1-${zId}`).innerText = (PM1 || 0).toFixed(1);
+    
     const timeFormatted = new Date(timestamp).toLocaleTimeString();
-    document.getElementById("param-timestamp").innerText = "Cập nhật: " + timeFormatted;
+    document.getElementById(`time-${zId}`).innerText = timeFormatted;
 
-    const pipe = document.getElementById('pipe-1');
-    const base = document.getElementById('base-1');
-    let color = 'var(--color-safe)';
+    // 2. Logic Cảnh báo & Đổi màu ống khói
+    const pipe = document.getElementById(`pipe-${zId}`);
+    const base = document.getElementById(`base-${zId}`);
+    const cellSo2 = document.getElementById(`cell-so2-${zId}`);
+    const cellPm25 = document.getElementById(`cell-pm25-${zId}`);
+    
+    let isDanger = false;
+    let isWarn = false;
 
-    // Kiểm tra Cảnh báo: SO2 > 100, PM > 200 => Danger
-    if (SO2 > 100 || PM2_5 > 200) {
-        color = 'var(--color-danger)';
-        showWarningAlert("⚠️ Lượng Khí Độc Nguy Hiểm! \nSO2: " + SO2 + ", PM: " + PM2_5);
-    } else if (SO2 > 50 || PM2_5 > 100) {
-        color = 'var(--color-warn)';
+    // Reset màu về Safe
+    pipe.style.borderColor = 'var(--safe-glow)';
+    pipe.style.boxShadow = 'none';
+    base.style.borderColor = 'var(--safe-glow)';
+    cellSo2.style.borderLeftColor = 'var(--safe-glow)';
+    cellPm25.style.borderLeftColor = 'var(--safe-glow)';
+
+    // Đánh giá SO2
+    if (SO2 > 100) {
+        isDanger = true;
+        cellSo2.style.borderLeftColor = 'var(--danger-glow)';
+    } else if (SO2 > 50) {
+        isWarn = true;
+        cellSo2.style.borderLeftColor = 'var(--warn-glow)';
     }
 
-    // Hiệu ứng Đổi màu ống khói
-    pipe.style.borderColor = color;
-    pipe.style.boxShadow = "0 0 15px " + color;
-    base.style.borderColor = color;
-
-    document.getElementById("param-so2-1").style.borderLeftColor = SO2 > 100 ? 'var(--color-danger)' : (SO2 > 50 ? 'var(--color-warn)' : 'var(--color-safe)');
-    document.getElementById("param-pm25-1").style.borderLeftColor = PM2_5 > 200 ? 'var(--color-danger)' : (PM2_5 > 100 ? 'var(--color-warn)' : 'var(--color-safe)');
-
-    // Cập nhật lên Graph (Giữ max 20 điểm)
-    if (state.chartInstance) {
-        if (state.chartInstance.data.labels.length > 20) {
-            state.chartInstance.data.labels.shift();
-            state.chartInstance.data.datasets[0].data.shift();
-            state.chartInstance.data.datasets[1].data.shift();
-        }
-        state.chartInstance.data.labels.push(timeFormatted);
-        state.chartInstance.data.datasets[0].data.push(SO2);
-        state.chartInstance.data.datasets[1].data.push(PM2_5);
-        state.chartInstance.update();
+    // Đánh giá PM2.5
+    if (PM2_5 > 250) {
+        isDanger = true;
+        cellPm25.style.borderLeftColor = 'var(--danger-glow)';
+    } else if (PM2_5 > 100) {
+        isWarn = true;
+        cellPm25.style.borderLeftColor = 'var(--warn-glow)';
     }
+
+    // Áp dụng màu cho Ống khói
+    if (isDanger) {
+        pipe.style.borderColor = 'var(--danger-glow)';
+        pipe.style.boxShadow = '0 0 15px var(--danger-glow)';
+        base.style.borderColor = 'var(--danger-glow)';
+    } else if (isWarn) {
+        pipe.style.borderColor = 'var(--warn-glow)';
+        pipe.style.boxShadow = '0 0 10px var(--warn-glow)';
+        base.style.borderColor = 'var(--warn-glow)';
+    }
+
+    // 3. Đẩy dữ liệu vào 4 Biểu đồ
+    updateChartData(state.dashboard.charts.so2, timeFormatted, SO2, zId);
+    updateChartData(state.dashboard.charts.pm10, timeFormatted, PM10 || 0, zId);
+    updateChartData(state.dashboard.charts.pm25, timeFormatted, PM2_5, zId);
+    updateChartData(state.dashboard.charts.pm1, timeFormatted, PM1 || 0, zId);
+    
+
+};
+
+// Hàm phụ trợ để push data vào Chart
+const updateChartData = (chart, timeLabel, value, zId) => {
+    if (!chart) return;
+    
+    const datasetIndex = zId - 1; // 0 cho Zone A, 1 cho Zone B
+
+    // Cập nhật nhãn thời gian (chỉ lấy theo dataset của Zone A làm chuẩn)
+    if (zId === 1 && chart.data.labels[chart.data.labels.length - 1] !== timeLabel) {
+        chart.data.labels.push(timeLabel);
+    }
+
+    // Cập nhật giá trị
+    chart.data.datasets[datasetIndex].data.push(value);
+
+    // Cắt bớt mảng nếu vượt quá giới hạn hiển thị
+    if (chart.data.labels.length > state.dashboard.maxDataPoints) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+        chart.data.datasets[1].data.shift();
+    }
+
+    chart.update('none'); // Update nhẹ nhàng, không xài animation nặng
 };
 
 const loadDevicesData = async () => {
@@ -481,36 +619,60 @@ const renderDevicesGrid = (devices) => {
 
     devices.forEach(d => {
         const isOnline = d.status === 'online';
-        const color = isOnline ? 'var(--color-safe)' : 'var(--color-danger)';
-        const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
+        const statusClass = isOnline ? 'status-online' : 'status-offline';
+        const statusText = isOnline ? '● ONLINE' : '○ OFFLINE';
+        const wifiSsid = d.currentWifiSsid || d.wifi_ssid || 'N/A';
+        const wifiRssi = d.wifiRssi || d.wifi_rssi || 0;
+        const loraNodes = d.loraNodesCount || d.lora_nodes_count || 0;
 
         grid.innerHTML += `
-        <div class="station-card" style="position:relative; display:flex; flex-direction:column; justify-content:space-between;" id="card-${d.deviceId}">
-            <div>
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px;">
-                    <h3 style="margin:0; color:#4fc3f7;">${d.name}</h3>
-                    <div style="background:#222; padding:3px 8px; border-radius:12px; font-size:12px; border:1px solid ${color}; color:${color};" id="status-${d.deviceId}">
-                        ● ${statusText}
-                    </div>
+        <div class="gw-card" id="card-${d.deviceId}">
+            <div class="card-header">
+                <div class="gw-title">
+                    <div class="gw-name">🏭 ${d.name || 'Gateway Không Tên'}</div>
+                    <div class="gw-id-badge">ID: ${d.deviceId} | MAC: N/A</div>
                 </div>
-                
-                <div style="color:#aaa; font-size:14px; margin-bottom:8px;">ID: <strong style="color:white;">${d.deviceId}</strong></div>
-                <div style="color:#aaa; font-size:14px; margin-bottom:8px;" id="wifi-${d.deviceId}">
-                    📶 Mạng: <strong style="color:white;">${d.currentWifiSsid || 'N/A'}</strong> 
-                    <span style="font-size:12px; color:gray;">(${d.wifiRssi || 0} dBm)</span>
-                </div>
-                <div style="color:#aaa; font-size:14px; margin-bottom:8px;" id="lora-${d.deviceId}">📟 Số Node LoRa: <strong style="color:white;">${d.loraNodesCount || 0} Nodes</strong></div>
+                <div class="status-pill ${statusClass}" id="status-${d.deviceId}">${statusText}</div>
             </div>
             
-            <div style="display:flex; gap:10px; margin-top:20px; border-top:1px solid #333; padding-top:15px;">
-                <button class="btn-primary" style="flex:1; background:#333; font-size:13px; color:#fff;" onclick="showToast('Tính năng hiển thị tham số cài đặt thiết bị')">✏️ Sửa</button>
-                <button class="btn-primary" style="flex:1; background:#333; font-size:13px; color:#fff;" onclick="navigate('/network')">📡 Wi-Fi</button>
-                <button class="btn-primary" style="flex:1; background:#4a1c1c; font-size:13px; color:#ff4c4c;" onclick="showToast('Bạn không có quyền xóa Trạm chủ!')">🗑️ Xóa</button>
+            <div class="card-body">
+                <div class="info-col">
+                    <div class="info-label">Thông tin Mạng</div>
+                    <div class="info-item" id="wifi-${d.deviceId}"><span class="info-icon">📡</span> <span class="info-val">${wifiSsid}</span></div>
+                    <div class="info-item"><span class="info-icon">📶</span> <span class="info-val">${wifiRssi} dBm (Good)</span></div>
+                    <div class="info-item"><span class="info-icon">🌐</span> <span class="info-val">192.168.10.250</span></div>
+                    <div class="info-item"><span class="info-icon">⏱️</span> <span class="info-val">34h 16m</span></div>
+                </div>
+                <div class="info-col">
+                    <div class="info-label">Trạng thái LoRa Nodes (2/2)</div>
+                    <div class="info-item"><span class="node-dot bg-ok"></span> <span class="info-val">Zone A (Trạm 1)</span></div>
+                    <div class="info-item"><span class="node-dot bg-ok"></span> <span class="info-val">Zone B (Trạm 2)</span></div>
+                    <div class="info-item" style="margin-top: 15px;"><span class="info-icon">☁️</span> <span class="info-val" style="color:var(--text-dim); font-weight:normal;">MQTT: ${isOnline ? 'Connected (TLS)' : 'Disconnected'}</span></div>
+                </div>
+            </div>
+
+            <div class="threshold-section">
+                <div class="section-title">⚙️ CẤU HÌNH NGƯỠNG CẢNH BÁO (THRESHOLD)</div>
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <label>Ngưỡng SO2</label>
+                        <div class="input-box"><input type="number" id="limit-so2-${d.deviceId}" value="100.0" step="0.1" ${!isOnline ? 'disabled' : ''}><span>ppm</span></div>
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Ngưỡng Bụi (PM)</label>
+                        <div class="input-box"><input type="number" id="limit-pm-${d.deviceId}" value="250" ${!isOnline ? 'disabled' : ''}><span>µg/m³</span></div>
+                    </div>
+                </div>
+                <button class="btn-apply ${!isOnline ? 'btn-disabled' : ''}" onclick="applyThreshold('${d.deviceId}')" ${!isOnline ? 'disabled' : ''}>Áp dụng Cấu hình xuống Gateway</button>
+            </div>
+
+            <div class="card-actions">
+                <button class="btn-action" onclick="showToast('Tính năng sửa thông tin')">✏️ Đổi tên</button>
+                <button class="btn-action btn-wifi" onclick="navigate('/network')">🔄 Đặt lại WiFi</button>
+                <button class="btn-action btn-danger" onclick="showToast('Tính năng xóa trạm')">🗑️ Xóa</button>
             </div>
         </div>
         `;
-
-        // Tính năng mở room kết nối đã được thay thế bằng lệnh phát sóng WebSocket Toàn cầu (Global Broadcasts)
     });
 };
 
