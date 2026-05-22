@@ -525,14 +525,9 @@ body {
     width: 100%;
 }
 
-/* Hàng dưới cùng (3 panel đều nhau) */
+/* Hàng dưới cùng (2 panel) */
 .bottom-log {
-    grid-column: 1 / span 1;
-    height: 350px;
-}
-
-.bottom-flow {
-    grid-column: 2 / span 1;
+    grid-column: 1 / span 2;
     height: 350px;
 }
 
@@ -1139,3 +1134,110 @@ input[type="file"] { display: none; }
 /* Định dạng text cảnh báo trong bảng Data */
 .val-danger { color: var(--danger-glow); font-weight: bold; }
 .val-warn { color: var(--warn-glow); font-weight: bold; }
+
+/* ========================================= */
+/* MOBILE RESPONSIVE STYLES                  */
+/* ========================================= */
+
+/* Hamburger Menu Button */
+.mobile-header {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-panel);
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.hamburger-btn {
+    background: none;
+    border: none;
+    color: var(--accent-cyan);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .app-layout {
+        flex-direction: column;
+    }
+
+    /* Hiển thị Mobile Header */
+    .mobile-header {
+        display: flex;
+    }
+
+    /* Ẩn Sidebar mặc định, biến thành Overlay Trượt ngang */
+    .sidebar {
+        position: fixed;
+        left: -260px;
+        top: 0;
+        bottom: 0;
+        height: 100vh;
+        z-index: 9999;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    .content-area {
+        padding: 10px;
+    }
+
+    /* Dashboard Grid: Xếp chồng dọc 1 cột */
+    .dashboard-page {
+        grid-template-columns: 1fr;
+    }
+
+    /* Charts Grid: Xếp dọc 1 cột */
+    .charts-grid {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .trend-panel {
+        height: auto;
+    }
+    
+    .chart-box {
+        min-height: 250px;
+    }
+
+    /* Log và Kết nối: Xếp chồng */
+    .bottom-log, .bottom-conn {
+        grid-column: 1 / -1;
+    }
+
+    /* Gateway Grid trong panel */
+    .gw-grid {
+        grid-template-columns: 1fr;
+        max-height: none;
+    }
+
+    /* Device Management Grid */
+    .gateway-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Bảng dữ liệu có thể cuộn ngang */
+    .alert-table-container, .table-container {
+        overflow-x: auto;
+    }
+    
+    /* Ẩn nút thời gian to trên header sidebar cho gọn nếu cần, nhưng tạm giữ */
+}
+
+/* Nền mờ khi Sidebar trượt ra (Overlay) */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9998;
+}
+.sidebar-overlay.active {
+    display: block;
+}

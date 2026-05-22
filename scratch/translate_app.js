@@ -1,0 +1,92 @@
+const fs = require('fs');
+const path = require('path');
+
+const appPath = path.join(__dirname, '..', 'public', 'js', 'app.js');
+let content = fs.readFileSync(appPath, 'utf8');
+
+const dict = {
+    'Chức năng Đăng ký đã bị khóa!': 'Registration is locked!',
+    'Email/Mật khẩu trống': 'Email/Password cannot be empty',
+    'Sai Email hoặc Mật khẩu': 'Incorrect Email or Password',
+    'Đăng nhập thành công': 'Login successful',
+    'Lỗi kết nối máy chủ': 'Server connection error',
+    'Đã khôi phục phiên đăng nhập': 'Session restored',
+    'Phiên đăng nhập hết hạn': 'Session expired',
+    'Chưa kết nối Gateway nào!': 'No Gateway connected!',
+    'Lỗi kết nối MQTT Terminal': 'MQTT Terminal connection error',
+    'Đã xóa dữ liệu cấu hình cũ (nếu có).': 'Cleared old config data (if any).',
+    'Lỗi lấy danh sách thiết bị': 'Error loading device list',
+    'Trạm trống. Vui lòng bấm vào nút thêm trạm mới.': 'Empty station. Please click to add new station.',
+    'Gateway Không Tên': 'Unnamed Gateway',
+    'Thông tin Mạng': 'Network Information',
+    'Connected (TLS)': 'Connected (TLS)',
+    'Disconnected': 'Disconnected',
+    'CẤU HÌNH NGƯỠNG CẢNH BÁO (THRESHOLD)': 'WARNING THRESHOLD CONFIGURATION (THRESHOLD)',
+    'Ngưỡng SO2': 'SO2 Threshold',
+    'Ngưỡng Bụi (PM)': 'Dust Threshold (PM)',
+    'Áp dụng Cấu hình xuống Gateway': 'Apply Config to Gateway',
+    'Đổi tên': 'Rename',
+    'Đặt lại WiFi': 'Reset WiFi',
+    'Nhập tên mới cho thiết bị:': 'Enter new name for device:',
+    'Tên thiết bị không được để trống': 'Device name cannot be empty',
+    'Đổi tên thiết bị thành công!': 'Device renamed successfully!',
+    'Lỗi khi đổi tên thiết bị': 'Error renaming device',
+    'Lỗi tải danh sách thiết bị': 'Error loading device list',
+    '-- Chọn Gateway --': '-- Select Gateway --',
+    'GỬI LỆNH ĐỔI MẠNG XUỐNG THIẾT BỊ': 'SEND NETWORK CHANGE TO DEVICE',
+    'Cập nhật Wi-Fi xuống chip thành công!': 'Wi-Fi updated to chip successfully!',
+    'Lỗi xử lý đổi mạng từ Broker': 'Network change error from Broker',
+    'GATEWAY ĐANG OFFLINE': 'GATEWAY IS OFFLINE',
+    'GỬI CẤU HÌNH XUỐNG THIẾT BỊ': 'SEND CONFIG TO DEVICE',
+    'Mật khẩu không khớp': 'Passwords do not match',
+    'Mật khẩu phải lớn hơn 6 ký tự': 'Password must be > 6 characters',
+    'Cập nhật mật khẩu thành công!': 'Password updated successfully!',
+    'Lỗi khi đổi mật khẩu': 'Error changing password',
+    'Cập nhật thông tin thành công!': 'Information updated successfully!',
+    'Lỗi lưu cấu hình': 'Error saving config',
+    'JWT Hết hạn!': 'JWT Expired!',
+    'Lỗi tải cấu hình: Server Offline': 'Error loading config: Server Offline',
+    'Lỗi tải danh sách nhân viên': 'Error loading employee list',
+    'Không có dữ liệu': 'No data',
+    'Người dùng mới': 'New user',
+    'Vừa xong': 'Just now',
+    'Đặt lại Mật khẩu': 'Reset Password',
+    'Xóa': 'Delete',
+    'Đang Reset...': 'Resetting...',
+    'Đã reset MK về: ': 'Reset password to: ',
+    'Đã xóa tài khoản': 'Account deleted',
+    'Lỗi hệ thống': 'System error',
+    'Email đã tồn tại': 'Email already exists',
+    'Vui lòng điền đủ thông tin': 'Please fill all fields',
+    'Tạo thành công:': 'Successfully created:',
+    'Lỗi mạng': 'Network error',
+    'Lỗi tải lịch sử:': 'History load error:',
+    'Lỗi tải dữ liệu lịch sử': 'History data load error',
+    'Đã lọc hiển thị:': 'Display filtered:',
+    'Cả 2 Zone': 'Both Zones',
+    'Node 1': 'Node 1',
+    'Node 2': 'Node 2',
+    'Tổng số lần sự cố theo thiết bị': 'Total incidents by device',
+    'Số lần mất kết nối': 'Disconnections',
+    'Đã gửi cấu hình Ngưỡng cảnh báo!': 'Warning Threshold config sent!',
+    'Gateway Offline. Không thể gửi lệnh.': 'Gateway Offline. Cannot send command.',
+    'Gateway đang Offline. Không thể cấu hình ngưỡng.': 'Gateway is Offline. Cannot configure threshold.',
+    'Chưa tải được thư viện Chart.js': 'Chart.js library not loaded',
+    'Thành công': 'Success',
+    'Lỗi': 'Error',
+    'Đang kết nối WebSocket...': 'Connecting WebSocket...',
+    'WebSocket Đã Kết Nối': 'WebSocket Connected',
+    'Mất kết nối WebSocket': 'WebSocket Disconnected',
+    'Kết nối WebSocket đóng. Đang thử lại...': 'WebSocket connection closed. Retrying...',
+    'Lỗi WebSocket:': 'WebSocket error:',
+    '🟢 Online': '🟢 Online',
+    '🔴 Offline': '🔴 Offline'
+};
+
+for (const [vn, en] of Object.entries(dict)) {
+    // Replace globally
+    content = content.split(vn).join(en);
+}
+
+fs.writeFileSync(appPath, content, 'utf8');
+console.log('App translated successfully');

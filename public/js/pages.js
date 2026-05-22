@@ -1,11 +1,11 @@
 export const DevicesPage = `
 <div class="toolbar">
     <div style="display: flex; align-items: center; gap: 10px;">
-        <h2 style="margin: 0; color: #E0E0E0;">QUẢN LÝ THIẾT BỊ (EDGE GATEWAY)</h2>
+        <h2 style="margin: 0; color: #E0E0E0;">DEVICE MANAGEMENT (EDGE GATEWAY)</h2>
     </div>
     <div class="toolbar-actions">
-        <input type="text" class="search-box" placeholder="🔍 Tìm kiếm Gateway, SSID...">
-        <button class="btn-add" onclick="document.getElementById('addGatewayModal').style.display='flex'">➕ Thêm Gateway Mới</button>
+        <input type="text" class="search-box" placeholder="🔍 Search Gateway, SSID...">
+        <button class="btn-add" onclick="document.getElementById('addGatewayModal').style.display='flex'">➕ Add New Gateway</button>
     </div>
 </div>
 
@@ -13,26 +13,37 @@ export const DevicesPage = `
     <!-- Rendered via JS -->
 </div>
 
+<!-- MQTT Log Terminal -->
+<div class="panel" style="margin-top: 20px;">
+    <div class="panel-header" style="background: #1a1a1a; border-bottom: 1px solid #333;">
+        <span style="color: #4ade80; font-family: 'Courier New', Courier, monospace;">>_ MQTT PROTOCOL MONITORING & CONTROL STATION (REAL-TIME)</span>
+    </div>
+    <div id="mqtt-terminal" style="background: #000; color: #a3a3a3; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; height: 350px; overflow-y: auto; padding: 15px; border: 1px solid #333; border-radius: 0 0 8px 8px;">
+        <div style="color: #666; font-style: italic; margin-bottom: 10px;">Initializing monitoring connection...</div>
+        <!-- Logs will be inserted here -->
+    </div>
+</div>
+
 <!-- Modal Thêm Gateway Mới -->
 <div id="addGatewayModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>➕ Thêm Gateway Mới</h3>
+            <h3>➕ Add New Gateway</h3>
             <button class="btn-close" onclick="document.getElementById('addGatewayModal').style.display='none'">✖</button>
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <label>ID Gateway (Mã thiết bị)</label>
-                <input type="text" id="newGwId" placeholder="Nhập ID, vd: GW001" class="modal-input">
+                <label>Gateway ID (Device Code)</label>
+                <input type="text" id="newGwId" placeholder="Enter ID, e.g.: GW001" class="modal-input">
             </div>
             <div class="form-group">
-                <label>Mật khẩu Gateway</label>
-                <input type="password" id="newGwPassword" placeholder="Nhập mật khẩu" class="modal-input">
+                <label>Gateway Password</label>
+                <input type="password" id="newGwPassword" placeholder="Enter password" class="modal-input">
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-cancel" onclick="document.getElementById('addGatewayModal').style.display='none'">Hủy</button>
-            <button class="btn-submit" onclick="submitAddGateway()">Xác nhận</button>
+            <button class="btn-cancel" onclick="document.getElementById('addGatewayModal').style.display='none'">Cancel</button>
+            <button class="btn-submit" onclick="submitAddGateway()">Confirm</button>
         </div>
     </div>
 </div>
@@ -40,53 +51,45 @@ export const DevicesPage = `
 
 export const SettingsPage = `
     <div class="header" style="border-bottom:none; margin-bottom: 0;">
-        <h2 style="color: #E0E0E0;">CÀI ĐẶT TÀI KHOẢN</h2>
+        <h2 style="color: #E0E0E0;">ACCOUNT SETTINGS</h2>
     </div>
     <div class="stations-container" style="display:flex; gap:20px; flex-wrap:wrap; margin-top:20px;">
         <div class="station-card" style="flex:1; min-width:300px; display:block;">
-            <h3 style="color:#4fc3f7; border-bottom:1px solid var(--border-color); padding-bottom:10px;">THÔNG TIN CÁ NHÂN</h3>
+            <h3 style="color:#4fc3f7; border-bottom:1px solid var(--border-color); padding-bottom:10px;">PERSONAL INFORMATION</h3>
             <form id="profileForm" style="margin-top:20px;">
                 <div style="margin-bottom:15px;">
-                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Địa chỉ Email</label>
+                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Email Address</label>
                     <input type="email" id="profileEmail" disabled style="width:100%; padding:10px; background:#111; color:#888; border:1px solid #333; border-radius:4px; box-sizing:border-box; cursor: not-allowed;">
                 </div>
                 <div style="margin-bottom:15px;">
-                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Họ và Tên (*)</label>
+                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Full Name (*)</label>
                     <input type="text" id="profileName" required style="width:100%; padding:10px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
                 </div>
                 <div style="margin-bottom:15px;">
-                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Số điện thoại</label>
+                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Phone Number</label>
                     <input type="tel" id="profilePhone" style="width:100%; padding:10px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
                 </div>
-                <div style="margin-bottom:15px;">
-                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Bộ phận quản lý</label>
-                    <select id="profileDept" style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box;">
-                        <option value="">Chưa có dữ liệu</option>
-                        <option value="Phòng Môi trường">Phòng Môi trường</option>
-                        <option value="Xưởng Vận hành">Xưởng Vận hành</option>
-                        <option value="Ban Giám đốc">Ban Giám đốc</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn-primary" id="btnUpdateProfile" style="margin-top: 10px;">CẬP NHẬT THÔNG TIN</button>
+
+                <button type="submit" class="btn-primary" id="btnUpdateProfile" style="margin-top: 10px;">UPDATE INFORMATION</button>
             </form>
         </div>
 
         <div class="station-card" style="flex:1; min-width:300px; display:block;">
-            <h3 style="color:#FFC107; border-bottom:1px solid var(--border-color); padding-bottom:10px;">ĐỔI MẬT KHẨU</h3>
+            <h3 style="color:#FFC107; border-bottom:1px solid var(--border-color); padding-bottom:10px;">CHANGE PASSWORD</h3>
             <form id="passwordForm" style="margin-top:20px;">
                 <div style="margin-bottom:15px;">
-                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Mật khẩu hiện tại</label>
+                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Current Password</label>
                     <input type="password" id="oldPassword" required style="width:100%; padding:10px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
                 </div>
                 <div style="margin-bottom:15px;">
-                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Mật khẩu mới</label>
+                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">New Password</label>
                     <input type="password" id="newPassword" required style="width:100%; padding:10px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
                 </div>
                 <div style="margin-bottom:15px;">
-                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Xác nhận mật khẩu mới</label>
+                    <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Confirm mật khẩu mới</label>
                     <input type="password" id="confirmPassword" required style="width:100%; padding:10px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
                 </div>
-                <button type="submit" class="btn-primary" id="btnUpdatePassword" style="background:#FFC107; color:#000; margin-top: 10px;">ĐỔI MẬT KHẨU</button>
+                <button type="submit" class="btn-primary" id="btnUpdatePassword" style="background:#FFC107; color:#000; margin-top: 10px;">CHANGE PASSWORD</button>
             </form>
         </div>
     </div>
@@ -94,72 +97,46 @@ export const SettingsPage = `
 
 export const NetworkPage = `
     <div class="header" style="border-bottom:none; margin-bottom: 0;">
-        <h2 style="color: #E0E0E0;">CẤU HÌNH MẠNG WI-FI TỪ XA</h2>
+        <h2 style="color: #E0E0E0;">REMOTE WI-FI NETWORK CONFIGURATION</h2>
     </div>
     
     <div class="station-card" style="max-width: 600px; margin: 20px auto; display: block;">
-        <h3 style="color:#4fc3f7; border-bottom:1px solid #333; padding-bottom:10px;">THÔNG TIN WI-FI MỚI</h3>
+        <h3 style="color:#4fc3f7; border-bottom:1px solid #333; padding-bottom:10px;"> WI-FI Configuration</h3>
         
         <form id="networkForm" style="margin-top:20px;">
             <div style="margin-bottom:15px;">
-                <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Chọn Thiết Bị Gateway (*)</label>
+                <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Select Gateway Device (*)</label>
                 <select id="netDeviceId" required style="width:100%; padding:12px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px;">
-                    <option value="">Đang tải thiết bị...</option>
+                    <option value="">Loading devices...</option>
                 </select>
             </div>
 
             <div style="margin-bottom:15px;">
-                <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Tên Wi-Fi (SSID) mới (*)</label>
-                <input type="text" id="netSSID" required placeholder="Nhập tên mạng" style="width:100%; padding:12px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
+                <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">New Wi-Fi Name (SSID) (*)</label>
+                <input type="text" id="netSSID" required placeholder="Enter network name" style="width:100%; padding:12px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
             </div>
 
             <div style="position: relative; margin-bottom:20px;">
                 <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Mật khẩu Wi-Fi mới</label>
-                <input type="password" id="netPass" placeholder="Nhập mật khẩu (Nút mắt nhấp nháy)" style="width:100%; padding:12px; padding-right: 40px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
+                <input type="password" id="netPass" placeholder="Enter password" style="width:100%; padding:12px; padding-right: 40px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
                 <span id="eyeNetPass" style="position: absolute; right: 10px; top: 38px; cursor: pointer; user-select: none;">👁️</span>
             </div>
 
-            <button type="submit" id="btnSubmitNetwork" class="btn-primary" style="background:#FF9800; color:#000;">GỬI CẤU HÌNH XUỐNG THIẾT BỊ</button>
+            <button type="submit" id="btnSubmitNetwork" class="btn-primary" style="background:#FF9800; color:#000;">SEND CONFIG TO DEVICE</button>
         </form>
     </div>
 
-    <!-- CẤU HÌNH OTA -->
-    <div class="station-card" style="max-width: 600px; margin: 20px auto; display: block;">
-        <h3 style="color:#FFC107; border-bottom:1px solid #333; padding-bottom:10px;">CẤU HÌNH CẬP NHẬT TỪ XA (OTA)</h3>
-        
-        <form id="otaForm" style="margin-top:20px;">
-            <div style="margin-bottom:15px;">
-                <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Chọn Thiết Bị OTA (*)</label>
-                <select id="otaDeviceId" required style="width:100%; padding:12px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px;">
-                    <option value="">Đang tải thiết bị...</option>
-                </select>
-            </div>
-
-            <div style="margin-bottom:15px;">
-                <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">OTA Hostname Mới (*)</label>
-                <input type="text" id="otaHostname" required value="Gateway-ESP01" style="width:100%; padding:12px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
-            </div>
-
-            <div style="position: relative; margin-bottom:20px;">
-                <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">Mật khẩu OTA (*)</label>
-                <input type="password" id="otaPass" required placeholder="Nhập pass OTA" style="width:100%; padding:12px; padding-right: 40px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px; box-sizing:border-box;">
-                <span id="eyeOtaPass" style="position: absolute; right: 10px; top: 38px; cursor: pointer; user-select: none;">👁️</span>
-            </div>
-
-            <button type="submit" id="btnSubmitOta" class="btn-primary" style="background:#FFC107; color:#000;">GỬI LỆNH ĐỔI OTA XUỐNG THIẾT BỊ</button>
-        </form>
-    </div>
 
     <!-- Dialog Confirmation -->
     <div id="confirmModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
         <div style="background:#1e1e1e; border:1px solid #444; border-radius:8px; padding:25px; width:400px; text-align:center;">
-            <h3 style="color:#F44336; margin-top:0;">⚠️ XÁC NHẬN ĐỔI MẠNG</h3>
+            <h3 style="color:#F44336; margin-top:0;">⚠️ CONFIRM NETWORK CHANGE</h3>
             <p style="color:#ccc; font-size:15px; margin: 15px 0 25px 0;">
-                Bạn có chắc chắn muốn đổi mạng cho thiết bị này? Nếu nhập sai mật khẩu, thiết bị sẽ tự động khôi phục mạng cũ sau 15 giây.
+                Are you sure you want to change the network for this device? If the password is wrong, it will automatically revert to the old network after 15 seconds.
             </p>
             <div style="display:flex; justify-content:space-between; gap:15px;">
-                <button type="button" id="btnCancelModal" style="flex:1; padding:10px; background:#555; color:white; border:none; border-radius:4px; cursor:pointer;">Hủy Bỏ</button>
-                <button type="button" id="btnConfirmModal" style="flex:1; padding:10px; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer;">Tôi Chắc Chắn</button>
+                <button type="button" id="btnCancelModal" style="flex:1; padding:10px; background:#555; color:white; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
+                <button type="button" id="btnConfirmModal" style="flex:1; padding:10px; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer;">I Am Sure</button>
             </div>
         </div>
     </div>
@@ -167,48 +144,10 @@ export const NetworkPage = `
 
 export const RegisterPage = `
   <div class="login-screen">
-    <div class="login-container" style="width: 450px;">
-        <h2>ĐĂNG KÝ TÀI KHOẢN</h2>
-        <form class="login-form" id="registerForm">
-            <input type="text" id="regName" placeholder="Họ và tên (*)" required />
-            <input type="email" id="regEmail" placeholder="Email (*)" required />
-            <input type="tel" id="regPhone" placeholder="Số điện thoại" />
-            <select id="regDept" required style="width: 100%; padding: 12px; margin-bottom: 15px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 4px;">
-                <option value="">Chọn bộ phận (*)</option>
-                <option value="Phòng Môi trường">Phòng Môi trường</option>
-                <option value="Xưởng Vận hành">Xưởng Vận hành</option>
-                <option value="Ban Giám đốc">Ban Giám đốc</option>
-            </select>
-
-            <div style="position: relative;">
-              <input type="password" id="regPassword" placeholder="Mật khẩu (*)" required style="padding-right: 40px;" />
-              <span id="eyePassword" style="position: absolute; right: 10px; top: 12px; cursor: pointer; user-select: none;">👁️</span>
-            </div>
-            
-            <!-- Real-time Password Rules UX -->
-            <ul style="list-style: none; padding: 0; text-align: left; font-size: 13px; color: gray; margin-top: -5px; margin-bottom: 10px;" id="pwdPolicy">
-                <li id="ruleLength">○ Tối thiểu 8 ký tự</li>
-                <li id="ruleUpper">○ Ít nhất 1 chữ hoa (A-Z)</li>
-                <li id="ruleLower">○ Ít nhất 1 chữ thường (a-z)</li>
-                <li id="ruleNumber">○ Ít nhất 1 chữ số (0-9)</li>
-                <li id="ruleSpecial">○ Khuyên dùng 1 ký tự đặc biệt</li>
-            </ul>
-
-            <div style="position: relative;">
-               <input type="password" id="regConfirm" placeholder="Xác nhận mật khẩu (*)" required style="padding-right: 40px;" />
-               <span id="eyeConfirm" style="position: absolute; right: 10px; top: 12px; cursor: pointer; user-select: none;">👁️</span>
-            </div>
-            <div id="matchError" style="color: var(--color-danger); font-size: 13px; display: none; text-align: left; margin-top: -10px; margin-bottom: 10px;">❌ Mật khẩu xác nhận không khớp</div>
-
-            <button type="submit" id="btnRegisterSubmit" class="btn-primary" disabled style="background:#555; cursor:not-allowed;">ĐĂNG KÝ</button>
-        </form>
-        <div class="divider">HOẶC</div>
-        <a href="/api/auth/google"><button class="btn-google">ĐĂNG KÝ NHANH BẰNG GOOGLE</button></a>
-        
-        <div style="margin-top:20px;">
-           <span style="color:#aaa;">Đã có tài khoản?</span> 
-           <a href="#/" style="color:#4fc3f7; text-decoration:none; font-weight: bold;">Đăng nhập tại đây</a>
-        </div>
+    <div class="login-container">
+        <h2>Registration is locked</h2>
+        <p style="color: gray; margin-bottom: 20px;">Please contact the Administrator for an account.</p>
+        <a href="#/" style="color:#4fc3f7; text-decoration:none; font-weight: bold;">⬅ Back to Login</a>
     </div>
   </div>
 `;
@@ -219,16 +158,12 @@ export const LoginPage = `
         <h2>Exhaust Gas Monitoring Station</h2>
         <form class="login-form" id="loginForm">
             <input type="email" id="email" placeholder="Email" required />
-            <input type="password" id="password" placeholder="Mật khẩu" required />
-            <button type="submit" class="btn-primary">ĐĂNG NHẬP</button>
+            <input type="password" id="password" placeholder="Password" required />
+            <button type="submit" class="btn-primary">LOGIN</button>
         </form>
-        <div class="divider">HOẶC</div>
-        <a href="/api/auth/google"><button id="btn-google" class="btn-google">ĐĂNG NHẬP VỚI GOOGLE</button></a>
+        <div class="divider">OR</div>
+        <a href="/api/auth/google"><button id="btn-google" class="btn-google">LOGIN WITH GOOGLE</button></a>
         
-        <div style="margin-top:20px;">
-           <span style="color:#aaa;">Chưa có tài khoản?</span> 
-           <a href="#/register" style="color:#4fc3f7; text-decoration:none; font-weight: bold;">Đăng ký tại đây</a>
-        </div>
     </div>
   </div>
 `;
@@ -236,17 +171,24 @@ export const LoginPage = `
 export const SidebarLayout = `
   <div class="app-layout">
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">Exhaust Gas Monitoring Station</div>
+      <div class="sidebar-header">
+        Exhaust Gas Monitoring Station
+        <div style="margin-top: 15px; display: flex; flex-direction: column; align-items: center; background: rgba(0, 0, 0, 0.2); padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border);">
+            <span style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 3px;">INTERNET TIME</span>
+            <span id="server-clock" style="font-family: var(--font-data); font-size: 1.1rem; color: var(--safe-glow); font-weight: bold; letter-spacing: 1px;">Syncing...</span>
+        </div>
+      </div>
       <nav class="sidebar-nav">
         <a class="nav-item" data-route="/dashboard">📊 Dashboard</a>
-        <a class="nav-item" data-route="/devices">⚙️ Quản lý thiết bị</a>
-        <a class="nav-item" data-route="/share">🔗 Chia sẻ thiết bị</a>
-        <a class="nav-item" data-route="/report">📈 Báo cáo & Thống kê</a>
-        <a class="nav-item" data-route="/network">📡 Cấu hình mạng</a>
-        <a class="nav-item" data-route="/settings">👤 Cài đặt tài khoản</a>
+        <a class="nav-item" id="nav-devices" data-route="/devices" style="display:none;">⚙️ Device Management</a>
+        <!-- <a class="nav-item" data-route="/share">🔗 Chia sẻ thiết bị</a> -->
+        <!-- <a class="nav-item" data-route="/report">📈 Báo cáo & Thống kê</a> -->
+        <a class="nav-item" id="nav-network" data-route="/network" style="display:none;">📡 Network Configuration</a>
+        <a class="nav-item" id="nav-users" data-route="/users" style="display:none;">👥 User Management</a>
+        <a class="nav-item" data-route="/settings">👤 Account Settings</a>
       </nav>
       <div class="sidebar-footer">
-        <button id="btn-logout" class="btn-logout">🚪 Đăng xuất</button>
+        <button id="btn-logout" class="btn-logout">🚪 Logout</button>
       </div>
     </aside>
     <main class="content-area" id="content-area">
@@ -260,8 +202,8 @@ export const DashboardPage = `
     <div class="panel">
         <div class="panel-header">
             <div class="header-title">
-                <span class="main-title">TRẠM QUAN TRẮC 1 (ZONE A)</span>
-                <span class="sub-title">Cập nhật lúc: <span id="time-1" style="color: var(--text-main);">--:--:-- --/--</span></span>
+                <span class="main-title">MONITORING STATION 1 (Node 1)</span>
+                <span class="sub-title">Last updated: <span id="time-1" style="color: var(--text-main);">--:--:-- --/--</span></span>
             </div>
             <span style="font-size: 0.7rem; color: var(--safe-glow);" id="status-1">● CONNECTED</span>
         </div>
@@ -272,10 +214,10 @@ export const DashboardPage = `
                 <div class="chimney-base" id="base-1"></div>
             </div>
             <div class="data-grid">
-                <div class="data-cell" id="cell-so2-1"><span class="label">Nồng độ SO2</span><div><span class="value" id="val-so2-1">0.0</span> <span class="unit">ppm</span></div></div>
-                <div class="data-cell" id="cell-pm25-1"><span class="label">Bụi mịn PM2.5</span><div><span class="value" id="val-pm25-1">0.0</span> <span class="unit">µg/m³</span></div></div>
-                <div class="data-cell" id="cell-pm10-1"><span class="label">Bụi PM10</span><div><span class="value" id="val-pm10-1">0.0</span> <span class="unit">µg/m³</span></div></div>
-                <div class="data-cell" id="cell-pm1-1"><span class="label">Bụi PM1.0</span><div><span class="value" id="val-pm1-1">0.0</span> <span class="unit">µg/m³</span></div></div>
+                <div class="data-cell" id="cell-so2-1"><span class="label">SO2 Concentration</span><div><span class="value" id="val-so2-1">0.0</span> <span class="unit">ppm</span></div></div>
+                <div class="data-cell" id="cell-pm25-1"><span class="label">PM2.5 Fine Dust</span><div><span class="value" id="val-pm25-1">0.0</span> <span class="unit">µg/m³</span></div></div>
+                <div class="data-cell" id="cell-pm10-1"><span class="label">PM10 Dust</span><div><span class="value" id="val-pm10-1">0.0</span> <span class="unit">µg/m³</span></div></div>
+                <div class="data-cell" id="cell-pm1-1"><span class="label">PM1.0 Dust</span><div><span class="value" id="val-pm1-1">0.0</span> <span class="unit">µg/m³</span></div></div>
             </div>
         </div>
     </div>
@@ -283,8 +225,8 @@ export const DashboardPage = `
     <div class="panel">
         <div class="panel-header">
             <div class="header-title">
-                <span class="main-title">TRẠM QUAN TRẮC 2 (ZONE B)</span>
-                <span class="sub-title">Cập nhật lúc: <span id="time-2" style="color: var(--text-main);">--:--:-- --/--</span></span>
+                <span class="main-title">MONITORING STATION 2 (Node 2)</span>
+                <span class="sub-title">Last updated: <span id="time-2" style="color: var(--text-main);">--:--:-- --/--</span></span>
             </div>
             <span style="font-size: 0.7rem; color: var(--safe-glow);" id="status-2">● CONNECTED</span>
         </div>
@@ -295,65 +237,66 @@ export const DashboardPage = `
                 <div class="smoke-simulation" id="smoke-2">☁️</div>
             </div>
             <div class="data-grid">
-                <div class="data-cell" id="cell-so2-2"><span class="label">Nồng độ SO2</span><div><span class="value" id="val-so2-2">0.0</span> <span class="unit">ppm</span></div></div>
-                <div class="data-cell" id="cell-pm25-2"><span class="label">Bụi mịn PM2.5</span><div><span class="value" id="val-pm25-2">0.0</span> <span class="unit">µg/m³</span></div></div>
-                <div class="data-cell" id="cell-pm10-2"><span class="label">Bụi PM10</span><div><span class="value" id="val-pm10-2">0.0</span> <span class="unit">µg/m³</span></div></div>
-                <div class="data-cell" id="cell-pm1-2"><span class="label">Bụi PM1.0</span><div><span class="value" id="val-pm1-2">0.0</span> <span class="unit">µg/m³</span></div></div>
+                <div class="data-cell" id="cell-so2-2"><span class="label">SO2 Concentration</span><div><span class="value" id="val-so2-2">0.0</span> <span class="unit">ppm</span></div></div>
+                <div class="data-cell" id="cell-pm25-2"><span class="label">PM2.5 Fine Dust</span><div><span class="value" id="val-pm25-2">0.0</span> <span class="unit">µg/m³</span></div></div>
+                <div class="data-cell" id="cell-pm10-2"><span class="label">PM10 Dust</span><div><span class="value" id="val-pm10-2">0.0</span> <span class="unit">µg/m³</span></div></div>
+                <div class="data-cell" id="cell-pm1-2"><span class="label">PM1.0 Dust</span><div><span class="value" id="val-pm1-2">0.0</span> <span class="unit">µg/m³</span></div></div>
             </div>
         </div>
     </div>
 
     <div class="panel">
         <div class="panel-header">
-            <span style="color: #60a5fa;">🌐 THÔNG TIN & CẤU HÌNH GATEWAY</span>
+            <span style="color: #60a5fa;">🌐 GATEWAY INFO & CONFIGURATION</span>
             <span style="font-size: 0.7rem; color: var(--text-dim);">ESP-01 / STM32</span>
         </div>
         <div class="gw-grid">
-            <div class="gw-card alert-card"><span class="label">Ngưỡng cảnh báo SO2</span><span class="value" id="gw-limit-so2">100.0 ppm</span></div>
-            <div class="gw-card alert-card"><span class="label">Ngưỡng cảnh báo Bụi (PM)</span><span class="value" id="gw-limit-pm">250 µg/m³</span></div>
-            <div class="gw-card"><span class="label">Mạng kết nối (SSID)</span><span class="value" id="gw-ssid">SCADA_Factory_5G</span></div>
-            <div class="gw-card"><span class="label">Cường độ WiFi (RSSI)</span><span class="value" id="gw-rssi">-65 dBm</span></div>
-            <div class="gw-card"><span class="label">Máy chủ MQTT</span><span class="value" style="font-size: 0.95rem;">HiveMQ Cloud (TLS)</span></div>
-            <div class="gw-card"><span class="label">Cổng giao tiếp (Port)</span><span class="value">8883</span></div>
-            <div class="gw-card"><span class="label">Chu kỳ Heartbeat</span><span class="value">60 giây</span></div>
-            <div class="gw-card"><span class="label">Tên thiết bị (OTA)</span><span class="value">Gateway-ESP01</span></div>
+            <div class="gw-card"><span class="label">Connection Status</span><span class="value" id="gw-status" style="color: var(--text-dim);">○ OFFLINE</span></div>
+            <div class="gw-card alert-card"><span class="label">SO2 Warning Threshold</span><span class="value" id="gw-limit-so2">100.0 ppm</span></div>
+            <div class="gw-card alert-card"><span class="label">Dust (PM) Warning Threshold</span><span class="value" id="gw-limit-pm">250 µg/m³</span></div>
+            <div class="gw-card"><span class="label">Connected Network (SSID)</span><span class="value" id="gw-ssid">N/A</span></div>
+            <div class="gw-card"><span class="label">WiFi Signal Strength (RSSI)</span><span class="value" id="gw-rssi">0 dBm</span></div>
+            <div class="gw-card"><span class="label">MQTT Server</span><span class="value" style="font-size: 0.95rem;">HiveMQ Cloud (TLS)</span></div>
+            <div class="gw-card"><span class="label">Communication Port</span><span class="value">8883</span></div>
+            <div class="gw-card"><span class="label">Heartbeat Interval</span><span class="value">60 giây</span></div>
+            <div class="gw-card"><span class="label">Device Name (OTA)</span><span class="value">Gateway-ESP01</span></div>
         </div>
     </div>
 
     <div class="panel trend-panel">
         <div class="panel-header">
             <div style="display:flex; gap:15px; align-items:center;">
-                <span>📈 BIỂU ĐỒ XU HƯỚNG THỜI GIAN THỰC</span>
+                <span>📈 REAL-TIME TREND CHARTS</span>
                 <select class="custom-select" id="zone-filter" onchange="applyZoneFilter(this.value)">
-                    <option value="all">Hiển thị: Cả 2 Zone</option>
-                    <option value="z1">Chỉ hiển thị Zone A</option>
-                    <option value="z2">Chỉ hiển thị Zone B</option>
+                    <option value="all">Display: Both Zones</option>
+                    <option value="z1">Display Node 1 Only</option>
+                    <option value="z2">Display Node 2 Only</option>
                 </select>
             </div>
             <div style="display:flex; gap:15px; font-size:0.8rem; font-family:var(--font-data);">
-                <span style="color: #22d3ee;">■ Zone A</span>
-                <span style="color: #fbbf24;">■ Zone B</span>
+                <span style="color: #22d3ee;">■ Node 1</span>
+                <span style="color: #fbbf24;">■ Node 2</span>
             </div>
         </div>
-        <div class="charts-grid">
-            <div class="chart-box">
+        <div class="charts-grid" style="display: flex; overflow-x: auto; flex-wrap: nowrap; gap: 15px; padding-bottom: 10px;">
+            <div class="chart-box" style="flex: 0 0 auto; min-width: 450px; width: 450px; min-height: 0;">
                 <div class="chart-top-bar"><span class="chart-title">SO2 (ppm)</span>
-                    <div class="time-controls"><button class="time-btn" onclick="setTimeRange('chart-so2', 300, this)">15M</button><button class="time-btn" onclick="setTimeRange('chart-so2', 100, this)">5M</button><button class="time-btn" onclick="setTimeRange('chart-so2', 20, this)">1M</button><button class="time-btn active" onclick="setTimeRange('chart-so2', 10, this)">LIVE</button></div>
+                    <div class="time-controls"><button class="time-btn" onclick="setTimeRange('chart-so2', '1h', this)">1h</button><button class="time-btn" onclick="setTimeRange('chart-so2', '15m', this)">15m</button><button class="time-btn" onclick="setTimeRange('chart-so2', '5m', this)">5m</button><button class="time-btn active" onclick="setTimeRange('chart-so2', 'live', this)">LIVE</button></div>
                 </div><div class="chart-wrapper"><canvas id="chart-so2"></canvas></div>
             </div>
-            <div class="chart-box">
+            <div class="chart-box" style="flex: 0 0 auto; min-width: 450px; width: 450px; min-height: 0;">
                 <div class="chart-top-bar"><span class="chart-title">PM10 (µg/m³)</span>
-                    <div class="time-controls"><button class="time-btn" onclick="setTimeRange('chart-pm10', 300, this)">15M</button><button class="time-btn" onclick="setTimeRange('chart-pm10', 100, this)">5M</button><button class="time-btn" onclick="setTimeRange('chart-pm10', 20, this)">1M</button><button class="time-btn active" onclick="setTimeRange('chart-pm10', 10, this)">LIVE</button></div>
+                    <div class="time-controls"><button class="time-btn" onclick="setTimeRange('chart-pm10', '1h', this)">1h</button><button class="time-btn" onclick="setTimeRange('chart-pm10', '15m', this)">15m</button><button class="time-btn" onclick="setTimeRange('chart-pm10', '5m', this)">5m</button><button class="time-btn active" onclick="setTimeRange('chart-pm10', 'live', this)">LIVE</button></div>
                 </div><div class="chart-wrapper"><canvas id="chart-pm10"></canvas></div>
             </div>
-            <div class="chart-box">
+            <div class="chart-box" style="flex: 0 0 auto; min-width: 450px; width: 450px; min-height: 0;">
                 <div class="chart-top-bar"><span class="chart-title">PM2.5 (µg/m³)</span>
-                    <div class="time-controls"><button class="time-btn" onclick="setTimeRange('chart-pm25', 300, this)">15M</button><button class="time-btn" onclick="setTimeRange('chart-pm25', 100, this)">5M</button><button class="time-btn" onclick="setTimeRange('chart-pm25', 20, this)">1M</button><button class="time-btn active" onclick="setTimeRange('chart-pm25', 10, this)">LIVE</button></div>
+                    <div class="time-controls"><button class="time-btn" onclick="setTimeRange('chart-pm25', '1h', this)">1h</button><button class="time-btn" onclick="setTimeRange('chart-pm25', '15m', this)">15m</button><button class="time-btn" onclick="setTimeRange('chart-pm25', '5m', this)">5m</button><button class="time-btn active" onclick="setTimeRange('chart-pm25', 'live', this)">LIVE</button></div>
                 </div><div class="chart-wrapper"><canvas id="chart-pm25"></canvas></div>
             </div>
-            <div class="chart-box">
+            <div class="chart-box" style="flex: 0 0 auto; min-width: 450px; width: 450px; min-height: 0;">
                 <div class="chart-top-bar"><span class="chart-title">PM1.0 (µg/m³)</span>
-                    <div class="time-controls"><button class="time-btn" onclick="setTimeRange('chart-pm1', 300, this)">15M</button><button class="time-btn" onclick="setTimeRange('chart-pm1', 100, this)">5M</button><button class="time-btn" onclick="setTimeRange('chart-pm1', 20, this)">1M</button><button class="time-btn active" onclick="setTimeRange('chart-pm1', 10, this)">LIVE</button></div>
+                    <div class="time-controls"><button class="time-btn" onclick="setTimeRange('chart-pm1', '1h', this)">1h</button><button class="time-btn" onclick="setTimeRange('chart-pm1', '15m', this)">15m</button><button class="time-btn" onclick="setTimeRange('chart-pm1', '5m', this)">5m</button><button class="time-btn active" onclick="setTimeRange('chart-pm1', 'live', this)">LIVE</button></div>
                 </div><div class="chart-wrapper"><canvas id="chart-pm1"></canvas></div>
             </div>
         </div>
@@ -361,59 +304,33 @@ export const DashboardPage = `
 
     <div class="panel bottom-log">
         <div class="panel-header">
-            <span style="color: #fcd34d;">⚠️ NHẬT KÝ SỰ KIỆN</span>
+            <span style="color: #fcd34d;">⚠️ EVENT LOG</span>
             <select class="custom-select" id="alert-filter" onchange="applyAlertFilter()" style="max-width: 130px;">
-                <option value="all">Tất cả</option>
-                <option value="threshold">Vượt ngưỡng</option>
-                <option value="connection">Kết nối</option>
+                <option value="all">All</option>
+                <option value="threshold">Threshold Exceeded</option>
+                <option value="connection">Connection</option>
             </select>
         </div>
         <div class="alert-table-container">
             <table>
-                <thead><tr><th>Thời gian</th><th>Nguồn</th><th>Chi tiết</th></tr></thead>
+                <thead><tr><th>Time</th><th>Source</th><th>Details</th></tr></thead>
                 <tbody id="alert-tbody">
-                    <tr data-type="threshold"><td style="font-family: var(--font-data);">08:15:20</td><td>Zone A</td><td class="level-high">SO2 vượt ngưỡng</td></tr>
-                    <tr data-type="connection"><td style="font-family: var(--font-data);">07:30:00</td><td>Hệ thống</td><td class="level-low">Khôi phục WebSocket</td></tr>
+                    <tr data-type="threshold"><td style="font-family: var(--font-data);">08:15:20</td><td>Node 1</td><td class="level-high">SO2 exceeded threshold</td></tr>
+                    <tr data-type="connection"><td style="font-family: var(--font-data);">07:30:00</td><td>Hệ thống</td><td class="level-low">WebSocket Restored</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="panel bottom-flow">
-        <div class="panel-header">
-            <span>📊 THỐNG KÊ LƯU LƯỢNG</span>
-            <div style="display:flex; gap:5px;">
-                <select class="custom-select" id="stat-time-filter" onchange="updateStatsChart()">
-                    <option value="day">Ngày</option>
-                    <option value="week" selected>Tuần</option>
-                    <option value="month">Tháng</option>
-                    <option value="year">Năm</option>
-                </select>
-                <select class="custom-select" id="stat-type-filter" onchange="updateStatsChart()">
-                    <option value="avg">Avg</option>
-                    <option value="max">Max</option>
-                    <option value="min">Min</option>
-                </select>
-            </div>
-        </div>
-        <div class="violation-stats">
-            <span class="v-label">Cảnh báo vượt:</span>
-            <span>SO2: <span class="v-so2" id="v-count-so2">0</span></span>
-            <span>BỤI: <span class="v-pm" id="v-count-pm">0</span></span>
-        </div>
-        <div class="chart-wrapper" style="padding: 10px;">
-            <canvas id="statsChart"></canvas>
-        </div>
-    </div>
 
     <div class="panel bottom-conn">
         <div class="panel-header">
-            <span>📡 THỐNG KÊ ĐỘ ỔN ĐỊNH</span>
+            <span>📡 STABILITY STATISTICS</span>
             <select class="custom-select" id="uptime-time-filter" onchange="updateUptimeChart()">
-                <option value="live" selected>Hôm nay (Live)</option>
-                <option value="week">Trong tuần</option>
-                <option value="month">Trong tháng</option>
-                <option value="year">Trong năm</option>
+                <option value="live" selected>Today (Live)</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
             </select>
         </div>
         <div style="display:flex; flex-direction:column; height: 100%; padding: 15px;">
@@ -422,130 +339,130 @@ export const DashboardPage = `
             </div>
             <div class="violation-stats" style="border:none; margin-top: 10px; background: rgba(0,0,0,0.3); border-radius: 6px; padding: 10px; gap: 0;">
                 <div style="text-align:center; flex: 1;">
-                    <div style="color:var(--text-dim); font-size:0.7rem;">Gateway</div>
-                    <div id="up-gw-pct" style="color:var(--safe-glow); font-size:1rem; font-weight:bold; font-family:var(--font-data);">100%</div>
-                    <div style="color:var(--danger-glow); font-size:0.75rem;"><span id="drop-gw">0</span> sự cố</div>
+                    <div style="color:var(--text-dim); font-size:0.75rem; margin-bottom: 5px;">Gateway</div>
+                    <div style="color:var(--danger-glow); font-size:1.2rem; font-weight:bold;"><span id="drop-gw">0</span></div>
+                    <div style="color:gray; font-size:0.7rem;">incidents</div>
                 </div>
                 <div style="text-align:center; flex: 1; border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border);">
-                    <div style="color:var(--text-dim); font-size:0.7rem;">Zone A (N1)</div>
-                    <div id="up-n1-pct" style="color:var(--safe-glow); font-size:1rem; font-weight:bold; font-family:var(--font-data);">100%</div>
-                    <div style="color:var(--danger-glow); font-size:0.75rem;"><span id="drop-n1">0</span> sự cố</div>
+                    <div style="color:var(--text-dim); font-size:0.75rem; margin-bottom: 5px;">Node 1 (N1)</div>
+                    <div style="color:var(--danger-glow); font-size:1.2rem; font-weight:bold;"><span id="drop-n1">0</span></div>
+                    <div style="color:gray; font-size:0.7rem;">incidents</div>
                 </div>
                 <div style="text-align:center; flex: 1;">
-                    <div style="color:var(--text-dim); font-size:0.7rem;">Zone B (N2)</div>
-                    <div id="up-n2-pct" style="color:var(--safe-glow); font-size:1rem; font-weight:bold; font-family:var(--font-data);">100%</div>
-                    <div style="color:var(--danger-glow); font-size:0.75rem;"><span id="drop-n2">0</span> sự cố</div>
+                    <div style="color:var(--text-dim); font-size:0.75rem; margin-bottom: 5px;">Node 2 (N2)</div>
+                    <div style="color:var(--danger-glow); font-size:1.2rem; font-weight:bold;"><span id="drop-n2">0</span></div>
+                    <div style="color:gray; font-size:0.7rem;">incidents</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 `;
-export const AccessControlPage=`
-   <h2>QUẢN LÝ QUYỀN TRUY CẬP (ACCESS CONTROL)</h2>
+export const AccessControlPage = `
+   <h2>ACCESS CONTROL MANAGEMENT</h2>
 <main>
     <div class="panel">
         <div class="panel-header">
-            <span>✉️ THÊM NGƯỜI DÙNG MỚI</span>
+            <span>✉️ ADD NEW USER</span>
         </div>
         <div class="share-form">
             <div class="form-group">
-                <label class="group-title">1. Thông tin người nhận</label>
-                <input type="email" id="invite-email" class="input-email" placeholder="Nhập địa chỉ Email (VD: kythuat@factory.com)...">
+                <label class="group-title">1. Recipient Information</label>
+                <input type="email" id="invite-email" class="input-email" placeholder="Enter Email address (e.g. tech@factory.com)...">
             </div>
 
             <div class="form-group">
-                <label class="group-title">2. Quyền xem dữ liệu trạm (View Access)</label>
+                <label class="group-title">2. Station Data View Access</label>
                 
                 <div class="perm-row">
                     <div class="perm-info">
-                        <span class="perm-title">Zone A (Node 1)</span>
-                        <span class="perm-desc">Cho phép xem số liệu SO2, Bụi của ống khói 1</span>
+                        <span class="perm-title">Node 1 (Node 1)</span>
+                        <span class="perm-desc">Allow viewing SO2 and Dust data of chimney 1</span>
                     </div>
                     <label class="switch"><input type="checkbox" id="perm-z1" checked><span class="slider"></span></label>
                 </div>
                 
                 <div class="perm-row">
                     <div class="perm-info">
-                        <span class="perm-title">Zone B (Node 2)</span>
-                        <span class="perm-desc">Cho phép xem số liệu SO2, Bụi của ống khói 2</span>
+                        <span class="perm-title">Node 2 (Node 2)</span>
+                        <span class="perm-desc">Allow viewing SO2 and Dust data of chimney 2</span>
                     </div>
                     <label class="switch"><input type="checkbox" id="perm-z2" checked><span class="slider"></span></label>
                 </div>
             </div>
 
             <div class="form-group">
-                <label class="group-title">3. Quyền quản trị hệ thống (Admin Access)</label>
+                <label class="group-title">3. System Admin Access</label>
                 
                 <div class="perm-row">
                     <div class="perm-info">
-                        <span class="perm-title">Chỉnh sửa Ngưỡng cảnh báo</span>
-                        <span class="perm-desc">Cho phép thay đổi giới hạn SO2 và Bụi (Publish MQTT)</span>
+                        <span class="perm-title">Edit Warning Thresholds</span>
+                        <span class="perm-desc">Allow changing SO2 and Dust limits (Publish MQTT)</span>
                     </div>
                     <label class="switch"><input type="checkbox" id="perm-thresh"><span class="slider"></span></label>
                 </div>
 
                 <div class="perm-row">
                     <div class="perm-info">
-                        <span class="perm-title">Xem thông tin Gateway</span>
-                        <span class="perm-desc">Xem IP, RSSI, MQTT Status, Uptime của thiết bị tổng</span>
+                        <span class="perm-title">View Gateway Information</span>
+                        <span class="perm-desc">View IP, RSSI, MQTT Status, Uptime of main device</span>
                     </div>
                     <label class="switch"><input type="checkbox" id="perm-gwinfo"><span class="slider"></span></label>
                 </div>
 
                 <div class="perm-row">
                     <div class="perm-info">
-                        <span class="perm-title" style="color: #fca5a5;">Cấu hình WiFi</span>
-                        <span class="perm-desc">Quyền gửi lệnh Reset cấu hình mạng ESP-01</span>
+                        <span class="perm-title" style="color: #fca5a5;">WiFi Configuration</span>
+                        <span class="perm-desc">Permission to send Reset network config command to ESP-01</span>
                     </div>
                     <label class="switch"><input type="checkbox" id="perm-wifi"><span class="slider"></span></label>
                 </div>
             </div>
 
-            <button class="btn-submit" onclick="sendInvite()">Gửi lời mời & Cấp quyền</button>
+            <button class="btn-submit" onclick="sendInvite()">Send Invite & Grant Access</button>
         </div>
     </div>
 
     <div class="panel">
         <div class="panel-header">
-            <span>👥 DANH SÁCH TÀI KHOẢN ĐÃ ĐƯỢC CHIA SẺ</span>
-            <span style="font-weight:normal; font-size:0.8rem; color:var(--text-dim);" id="user-count">Tổng: 2 người</span>
+            <span>👥 LIST OF SHARED ACCOUNTS</span>
+            <span style="font-weight:normal; font-size:0.8rem; color:var(--text-dim);" id="user-count">Total: 2 people</span>
         </div>
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>Tài khoản Email</th>
-                        <th>Khu vực giám sát (Nodes)</th>
-                        <th>Quyền quản trị mở rộng</th>
-                        <th style="text-align: right;">Hành động</th>
+                        <th>Email Account</th>
+                        <th>Monitored Areas (Nodes)</th>
+                        <th>Extended Admin Rights</th>
+                        <th style="text-align: right;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="shared-list">
                     <tr>
                         <td style="font-weight:bold;">nguyen.van.a@factory.com</td>
                         <td>
-                            <span class="badge badge-node">Zone A</span>
-                            <span class="badge badge-node">Zone B</span>
+                            <span class="badge badge-node">Node 1</span>
+                            <span class="badge badge-node">Node 2</span>
                         </td>
                         <td>
-                            <span class="badge badge-admin">Sửa Ngưỡng</span>
+                            <span class="badge badge-admin">Edit Thresholds</span>
                             <span class="badge badge-admin">Xem GW Info</span>
                         </td>
                         <td style="text-align: right;">
-                            <button class="btn-revoke" onclick="revokeAccess(this)">Thu hồi</button>
+                            <button class="btn-revoke" onclick="revokeAccess(this)">Revoke</button>
                         </td>
                     </tr>
                     <tr>
                         <td style="font-weight:bold;">giam.sat.kho@factory.com</td>
                         <td>
-                            <span class="badge badge-node">Zone B</span>
+                            <span class="badge badge-node">Node 2</span>
                         </td>
                         <td>
-                            <span class="badge badge-none">Chỉ xem</span>
+                            <span class="badge badge-none">View Only</span>
                         </td>
                         <td style="text-align: right;">
-                            <button class="btn-revoke" onclick="revokeAccess(this)">Thu hồi</button>
+                            <button class="btn-revoke" onclick="revokeAccess(this)">Revoke</button>
                         </td>
                     </tr>
                 </tbody>
@@ -553,24 +470,24 @@ export const AccessControlPage=`
         </div>
     </div>
 `;
-export const ReportPage=`
+export const ReportPage = `
 <div class="toolbar">
     <h2>
-        PHÂN TÍCH DỮ LIỆU
+        DATA ANALYSIS
         <select id="nodeFilter" class="custom-select" onchange="applyFilter()" disabled>
-            <option value="all">Hiển thị: Tất cả Trạm</option>
-            <option value="1">Chỉ hiện Zone A (N1)</option>
-            <option value="2">Chỉ hiện Zone B (N2)</option>
+            <option value="all">Display: All Stations</option>
+            <option value="1">Display Node 1 (N1) Only</option>
+            <option value="2">Display Node 2 (N2) Only</option>
         </select>
     </h2>
     <div class="toolbar-actions">
         <label for="logFileInput" class="btn btn-primary">
-            📂 Nhập file Log (.txt)
+            📂 Import Log file (.txt)
         </label>
         <input type="file" id="logFileInput" accept=".txt" onchange="handleFileUpload(event)">
         
         <button id="exportBtn" class="btn btn-success" onclick="exportToCSV()" disabled style="opacity: 0.5; cursor: not-allowed;">
-            📥 Xuất CSV (Bản đang xem)
+            📥 Export CSV (Current View)
         </button>
     </div>
 </div>
@@ -578,43 +495,43 @@ export const ReportPage=`
 <main>
     <div class="panel">
         <div class="panel-header">
-            <span>📋 BÁO CÁO THỐNG KÊ TỔNG QUAN (SUMMARY)</span>
-            <span id="file-status" style="color: var(--text-dim); font-size: 0.8rem; font-weight: normal;">Chưa có dữ liệu</span>
+            <span>📋 OVERVIEW STATISTICAL REPORT (SUMMARY)</span>
+            <span id="file-status" style="color: var(--text-dim); font-size: 0.8rem; font-weight: normal;">No data yet</span>
         </div>
         
         <div class="advanced-stats">
             <div class="stat-card">
-                <div class="stat-card-title">📦 Thông tin Dữ liệu</div>
-                <div class="stat-row"><span>Tổng số bản ghi:</span> <span class="stat-val" id="stat-total">0</span></div>
-                <div class="stat-row"><span>Bản ghi Zone A:</span> <span class="stat-val" id="stat-z1">0</span></div>
-                <div class="stat-row"><span>Bản ghi Zone B:</span> <span class="stat-val" id="stat-z2">0</span></div>
+                <div class="stat-card-title">📦 Data Information</div>
+                <div class="stat-row"><span>Total records:</span> <span class="stat-val" id="stat-total">0</span></div>
+                <div class="stat-row"><span>Node 1 records:</span> <span class="stat-val" id="stat-z1">0</span></div>
+                <div class="stat-row"><span>Node 2 records:</span> <span class="stat-val" id="stat-z2">0</span></div>
             </div>
             
             <div class="stat-card">
-                <div class="stat-card-title" style="color: #22d3ee;">☁️ Nồng độ SO2 (ppm)</div>
-                <div class="stat-row"><span>Trung bình (Avg):</span> <span class="stat-val" id="so2-avg">0.0</span></div>
-                <div class="stat-row"><span>Thấp nhất (Min):</span> <span class="stat-val" id="so2-min">0.0</span></div>
-                <div class="stat-row"><span>Cao nhất (Max):</span> <span class="stat-val" id="so2-max">0.0</span></div>
+                <div class="stat-card-title" style="color: #22d3ee;">☁️ SO2 Concentration (ppm)</div>
+                <div class="stat-row"><span>Average (Avg):</span> <span class="stat-val" id="so2-avg">0.0</span></div>
+                <div class="stat-row"><span>Minimum (Min):</span> <span class="stat-val" id="so2-min">0.0</span></div>
+                <div class="stat-row"><span>Maximum (Max):</span> <span class="stat-val" id="so2-max">0.0</span></div>
                 <div class="stat-row" style="margin-top:5px; border-top:1px dashed #444; padding-top:5px;">
-                    <span>Vượt ngưỡng (>100):</span> <span class="stat-val stat-violation" id="so2-viol">0 lần</span>
+                    <span>Threshold Exceeded (>100):</span> <span class="stat-val stat-violation" id="so2-viol">0 times</span>
                 </div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-card-title" style="color: #fbbf24;">🌫️ Bụi mịn PM2.5 (µg/m³)</div>
-                <div class="stat-row"><span>Trung bình (Avg):</span> <span class="stat-val" id="pm25-avg">0.0</span></div>
-                <div class="stat-row"><span>Thấp nhất (Min):</span> <span class="stat-val" id="pm25-min">0.0</span></div>
-                <div class="stat-row"><span>Cao nhất (Max):</span> <span class="stat-val" id="pm25-max">0.0</span></div>
+                <div class="stat-card-title" style="color: #fbbf24;">🌫️ PM2.5 Fine Dust (µg/m³)</div>
+                <div class="stat-row"><span>Average (Avg):</span> <span class="stat-val" id="pm25-avg">0.0</span></div>
+                <div class="stat-row"><span>Minimum (Min):</span> <span class="stat-val" id="pm25-min">0.0</span></div>
+                <div class="stat-row"><span>Maximum (Max):</span> <span class="stat-val" id="pm25-max">0.0</span></div>
                 <div class="stat-row" style="margin-top:5px; border-top:1px dashed #444; padding-top:5px;">
-                    <span>Vượt ngưỡng (>250):</span> <span class="stat-val stat-violation" id="pm25-viol">0 lần</span>
+                    <span>Threshold Exceeded (>250):</span> <span class="stat-val stat-violation" id="pm25-viol">0 times</span>
                 </div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-card-title" style="color: #10b981;">💨 Bụi PM10 (µg/m³)</div>
-                <div class="stat-row"><span>Trung bình (Avg):</span> <span class="stat-val" id="pm10-avg">0.0</span></div>
-                <div class="stat-row"><span>Thấp nhất (Min):</span> <span class="stat-val" id="pm10-min">0.0</span></div>
-                <div class="stat-row"><span>Cao nhất (Max):</span> <span class="stat-val" id="pm10-max">0.0</span></div>
+                <div class="stat-card-title" style="color: #10b981;">💨 PM10 Dust (µg/m³)</div>
+                <div class="stat-row"><span>Average (Avg):</span> <span class="stat-val" id="pm10-avg">0.0</span></div>
+                <div class="stat-row"><span>Minimum (Min):</span> <span class="stat-val" id="pm10-min">0.0</span></div>
+                <div class="stat-row"><span>Maximum (Max):</span> <span class="stat-val" id="pm10-max">0.0</span></div>
             </div>
         </div>
 
@@ -630,15 +547,15 @@ export const ReportPage=`
 
     <div class="panel">
         <div class="panel-header">
-            <span>🗄️ DỮ LIỆU CẢM BIẾN CHI TIẾT (RAW DATA)</span>
+            <span>🗄️ DETAILED SENSOR DATA (RAW DATA)</span>
         </div>
         <div class="table-container">
             <table id="dataTable">
                 <thead>
                     <tr>
-                        <th>STT</th>
-                        <th>Thời gian</th>
-                        <th>Trạm (Zone)</th>
+                        <th>No.</th>
+                        <th>Time</th>
+                        <th>Station (Zone)</th>
                         <th>SO2 (ppm)</th>
                         <th>PM1.0 (µg/m³)</th>
                         <th>PM2.5 (µg/m³)</th>
@@ -648,7 +565,7 @@ export const ReportPage=`
                 <tbody id="tableBody">
                     <tr>
                         <td colspan="7" style="text-align:center; padding: 40px; color: var(--text-dim);">
-                            Chưa có dữ liệu. Vui lòng nhấn "Nhập file Log" để bắt đầu phân tích.
+                            No data yet. Vui lòng nhấn "Nhập file Log" để bắt đầu phân tích.
                         </td>
                     </tr>
                 </tbody>
@@ -661,6 +578,68 @@ export const BlankPage = (title, description) => `
     <div class="blank-page">
         <h2>${title}</h2>
         <p>${description}</p>
-        <p style="margin-top: 20px; color:#555">Tính năng này đang trong quá trình phát triển UI. Chú trọng module Dashboard (Socket) trước.</p>
+        <p style="margin-top: 20px; color:#555">This feature is under UI development. Focusing on Dashboard module (Socket) first.</p>
     </div>
+`;
+
+export const UserManagementPage = `
+<div class="toolbar">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <h2 style="margin: 0; color: #E0E0E0;">USER MANAGEMENT (ADMIN ONLY)</h2>
+    </div>
+</div>
+<main>
+    <div class="panel" style="margin-bottom: 20px;">
+        <div class="panel-header">
+            <span>➕ CREATE NEW ACCOUNT</span>
+        </div>
+        <form id="adminCreateUserForm" style="display:flex; gap: 10px; align-items: flex-end; padding: 15px;">
+            <div style="flex:1;">
+                <label style="font-size: 13px; color: gray;">Employee Name</label>
+                <input type="text" id="adminNewName" class="modal-input" required placeholder="Nguyễn Văn A">
+            </div>
+            <div style="flex:1;">
+                <label style="font-size: 13px; color: gray;">Email</label>
+                <input type="email" id="adminNewEmail" class="modal-input" required placeholder="nhanvien@factory.com">
+            </div>
+            <div style="flex:1; position: relative;">
+                <label style="font-size: 13px; color: gray;">Initial Password</label>
+                <input type="password" id="adminNewPassword" class="modal-input" required placeholder="Mật khẩu..." style="padding-right: 40px; width: 100%; box-sizing: border-box;">
+                <span id="adminEyePassword" style="position: absolute; right: 10px; top: 38px; cursor: pointer; user-select: none;">👁️</span>
+            </div>
+            <div style="flex:1;">
+                <label style="font-size: 13px; color: gray;">Role</label>
+                <select id="adminNewRole" class="modal-input" style="width: 100%;">
+                    <option value="user">Employee (User)</option>
+                    <option value="admin">Administrator (Admin)</option>
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="btn-primary" style="height: 42px;">Create Account</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <span>📋 LIST OF ACCOUNTS IN THE SYSTEM</span>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Created Date</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="userListBody">
+                    <tr><td colspan="5" style="text-align:center;">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
 `;

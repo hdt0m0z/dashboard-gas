@@ -7,9 +7,10 @@ const {
   googleAuthCallback,
 } = require('../controllers/authController');
 const { verifyToken } = require('../middlewares/authMiddleware');
+const { verifyAdmin } = require('../middlewares/adminMiddleware');
 
 // Local Auth Routes
-router.post('/register', registerUser);
+router.post('/register', verifyToken, verifyAdmin, registerUser);
 router.post('/login', loginUser);
 
 // Google OAuth Initiation

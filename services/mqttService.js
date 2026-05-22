@@ -1,6 +1,7 @@
 const mqtt = require('mqtt');
 const Telemetry = require('../models/Telemetry');
 const Device = require('../models/Device');
+const MqttLog = require('../models/MqttLog');
 const socketService = require('./socketService');
 
 let client;
@@ -9,16 +10,32 @@ const initMqtt = () => {
   // Vì là bảo mật TLS, bắt buộc phải dùng tiền tố mqtts:// và cung cấp đầy đủ port
   const brokerUrl = 'mqtts://cb305207255b4924b77b0ce88d8d68f2.s1.eu.hivemq.cloud:8883';
   console.log(`[MQTT] Connecting to broker: ${brokerUrl}`);
-  
+
   // Khởi tạo Client bằng broker url kết hợp options cấp quyền auth
   client = mqtt.connect(brokerUrl, {
     username: 'hdt0z0m',
     password: 'Thaihuy9903'
   });
 
+  // Hook ghi đè hàm publish để log tất cả OUTBOUND traffic
+  const originalPublish = client.publish.bind(client);
+  client.publish = (topic, message, options, callback) => {
+    try {
+      MqttLog.create({
+        direction: 'OUT',
+        topic: topic,
+        payload: message ? message.toString() : ''
+      })
+        .then(log => socketService.broadcastToAll('new_mqtt_log', log))
+        .catch(err => console.error('[MQTT] Failed to log OUTBOUND message', err));
+    } catch (e) { }
+
+    return originalPublish(topic, message, options, callback);
+  };
+
   client.on('connect', () => {
     console.log('[MQTT] Connected to HiveMQ Broker.');
-    
+
     // Subscribe to topic -> gateway/+/telemetry (+ acts as a single-level wildcard for any device ID)
     const topic = 'gateway/+/telemetry';
     client.subscribe(topic, (err) => {
@@ -32,14 +49,24 @@ const initMqtt = () => {
   // Message Handler Setup
   client.on('message', async (topic, message) => {
     try {
+      const payloadString = message.toString();
+
+      // Ghi log INBOUND traffic
+      MqttLog.create({
+        direction: 'IN',
+        topic: topic,
+        payload: payloadString
+      })
+        .then(log => socketService.broadcastToAll('new_mqtt_log', log))
+        .catch(err => console.error('[MQTT] Failed to log INBOUND message', err));
+
       // Parse topic structure => e.g., gateway/device123/telemetry
       const topicParts = topic.split('/');
       const deviceId = topicParts[1];
       const topicType = topicParts[2]; // Có thể là 'telemetry' hoặc 'status'
-      
-      const payloadString = message.toString();
+
       const data = JSON.parse(payloadString);
-      
+
       if (data.type === 'ota_error') {
         console.warn(`[MQTT] Lỗi OTA từ thiết bị ${deviceId}: ${data.message}`);
         socketService.broadcastToRoom(deviceId, 'gateway_error', {
@@ -48,27 +75,47 @@ const initMqtt = () => {
         });
         return; // Bỏ qua ghi Mongoose cho lỗi này
       }
-      
+
       // ---> XỬ LÝ LƯU TRẠNG THÁI (STATUS)
       if (topicType === 'status') {
         console.log(`\n[DEBUG] 1. MQTT Nhận được bản tin STATUS từ Gateway: ${deviceId}`);
         console.log(`[DEBUG] Payload:`, data);
-        
+
+        const oldDoc = await Device.findOne({ deviceId: deviceId });
+        const wasOffline = !oldDoc || oldDoc.status !== 'online';
+
+        const updatePayload = {
+          status: data.status || 'online',
+          currentWifiSsid: data.wifi_ssid || '',
+          wifiRssi: data.wifi_rssi || 0,
+          lastActive: Date.now()
+        };
+        if (data.lora_nodes_count !== undefined) {
+          updatePayload.loraNodesCount = data.lora_nodes_count;
+        }
+
         const updatedDoc = await Device.findOneAndUpdate(
           { deviceId: deviceId },
-          {
-            status: data.status || 'online',
-            currentWifiSsid: data.wifi_ssid || '',
-            wifiRssi: data.wifi_rssi || 0,
-            loraNodesCount: data.lora_nodes_count || 0,
-            lastActive: Date.now()
-          },
+          updatePayload,
           { new: true, upsert: false }
         );
-        
+
         console.log(`[DEBUG] 2. MongoDB Update Result cho DeviceID [${deviceId}]:`, updatedDoc ? 'THÀNH CÔNG (Đã lưu bản ghi)' : 'THẤT BẠI (Không tìm thấy ID trong DB, bỏ lỡ lưu trữ nhưng vẫn sẽ phát qua Web)');
-        
-        if (updatedDoc && updatedDoc.status === 'online') {
+
+        // Chỉ đồng bộ lại ngưỡng nếu thiết bị vừa chuyển trạng thái từ Offline sang Online
+        if (updatedDoc && updatedDoc.status === 'online' && wasOffline) {
+          const Alert = require('../models/Alert');
+          const alert = new Alert({
+            deviceId: deviceId,
+            nodeId: 0,
+            type: 'connection',
+            message: 'Reconnected (Gateway)',
+            isResolved: true
+          });
+          await alert.save();
+          socketService.broadcastToAll('new_alert', alert);
+          console.log(`✅ [GATEWAY ONLINE] Reconnected (Gateway ${deviceId})`);
+
           const limitSo2 = updatedDoc.settings?.thresholds?.limit_so2 || 100.0;
           const limitPm = updatedDoc.settings?.thresholds?.limit_pm || 250.0;
           const configTopic = `gateway/${deviceId}/config/threshold`;
@@ -77,7 +124,7 @@ const initMqtt = () => {
             limit_pm: limitPm
           });
           client.publish(configTopic, configPayload, { qos: 1 });
-          console.log(`[DEBUG] 2.5 Auto-synced thresholds to ${deviceId}: SO2=${limitSo2}, PM=${limitPm}`);
+          console.log(`[DEBUG] 2.5 Auto-synced thresholds to ${deviceId} (Transition to Online): SO2=${limitSo2}, PM=${limitPm}`);
         }
         console.log(`[DEBUG] 3. Phát sóng sự kiện 'gateway_status' TOÀN CẦU để các WEB CLIENT update...\n`);
 
@@ -101,12 +148,35 @@ const initMqtt = () => {
       const pm1 = parseFloat(data.pm1) || 0;
       const pm25 = parseFloat(rawPm25) || 0;
       const pm10 = parseFloat(data.pm10) || 0;
-      
+
       let nodeId = 1;
       if (data.node !== undefined && data.node !== null) {
         nodeId = Number(data.node) || 1;
       }
-      
+
+      // Track Node Activity and reconnect Alert
+      const key = `${deviceId}:${nodeId}`;
+      if (global.nodeActivityMap) {
+        global.nodeActivityMap.set(key, new Date());
+        if (global.nodeStatusMap && global.nodeStatusMap.get(key) !== true) {
+          // Reconnected
+          global.nodeStatusMap.set(key, true);
+          const Alert = require('../models/Alert');
+          const alert = new Alert({
+            deviceId,
+            nodeId: parseInt(nodeId),
+            type: 'connection',
+            message: `Reconnected (Node ${nodeId})`,
+            isResolved: true
+          });
+          await alert.save();
+          socketService.broadcastToAll('new_alert', alert);
+          console.log(`✅ [NODE ONLINE] Reconnected (Node ${nodeId})`);
+        } else if (global.nodeStatusMap) {
+          global.nodeStatusMap.set(key, true);
+        }
+      }
+
       let timestamp = new Date();
       const timeVal = data.time || data.Timestamp || data.timestamp;
       if (timeVal) {
@@ -119,7 +189,7 @@ const initMqtt = () => {
           // Bắt các định dạng từ STM32: "DD MM YYYY HH:MM:SS" hoặc "DD/MM/YYYY HH:MM:SS"
           const regex = /^(\d{1,2})[\s\/](\d{1,2})[\s\/](\d{4})\s+(\d{1,2}):(\d{1,2}):?(\d{1,2})?$/;
           const match = String(timeVal).trim().match(regex);
-          
+
           if (match) {
             const d = parseInt(match[1], 10);
             const m = parseInt(match[2], 10) - 1; // Month in JS is 0-indexed
@@ -127,7 +197,7 @@ const initMqtt = () => {
             const hh = parseInt(match[4], 10);
             const mm = parseInt(match[5], 10);
             const ss = match[6] ? parseInt(match[6], 10) : 0;
-            
+
             // Ép thành múi giờ local của Server
             const parsedTime = new Date(y, m, d, hh, mm, ss);
             if (!isNaN(parsedTime.getTime())) timestamp = parsedTime;
@@ -169,15 +239,26 @@ const initMqtt = () => {
         pm10: pm10,
         timestamp: newTelemetry.timestamp
       });
-      
+
       // 3. Cập nhật loraNodesCount và kiểm tra ngưỡng cảnh báo (Thresholds)
       const Alert = require('../models/Alert');
       const device = await Device.findOne({ deviceId });
-      
-      if (device && !device.activeNodes.includes(nodeId)) {
-        device.activeNodes.push(nodeId);
-        device.loraNodesCount = device.activeNodes.length;
-        await device.save();
+      if (device) {
+        let shouldSave = false;
+        if (!device.activeNodes.includes(nodeId)) {
+          device.activeNodes.push(nodeId);
+          shouldSave = true;
+        }
+
+        // Auto-correct loraNodesCount if it somehow became less than activeNodes length
+        if (device.loraNodesCount < device.activeNodes.length) {
+          device.loraNodesCount = device.activeNodes.length;
+          shouldSave = true;
+        }
+
+        if (shouldSave) {
+          await device.save();
+        }
       }
 
       if (device && device.settings && device.settings.thresholds) {
@@ -189,7 +270,7 @@ const initMqtt = () => {
           breached = true;
           alertMessage.push(`SO2 (${so2} ppm) vượt ngưỡng ${limit_so2} ppm.`);
         }
-        
+
         if (pm1 > limit_pm || pm25 > limit_pm || pm10 > limit_pm) {
           breached = true;
           alertMessage.push(`Nồng độ bụi PM vượt ngưỡng ${limit_pm} µg/m³.`);
@@ -204,14 +285,14 @@ const initMqtt = () => {
           });
           await alert.save();
           console.log(`[ALERT] ⚠️ Cảnh báo tạo cho ${deviceId}: ${alert.message}`);
-          
+
           socketService.broadcastToRoom(deviceId, 'gateway_error', {
             deviceId,
             message: `[CẢNH BÁO] ${alert.message}`
           });
         }
       }
-      
+
     } catch (err) {
       console.error('[MQTT] Message parsing or saving failed:', err);
     }

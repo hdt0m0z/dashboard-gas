@@ -14,7 +14,7 @@ const generateToken = (userId) => {
 // @route   POST /api/auth/register
 const registerUser = async (req, res) => {
   try {
-    const { email, password, name, phone, department } = req.body;
+    const { email, password, name, phone, role } = req.body;
 
     if (!email || !password || !name) {
       return res.status(400).json({ message: 'Please provide all fields' });
@@ -35,13 +35,14 @@ const registerUser = async (req, res) => {
       password: hashedPassword,
       name,
       phone: phone || "",
-      department: department || ""
+      role: role === 'admin' ? 'admin' : 'user'
     });
 
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role,
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -63,6 +64,7 @@ const loginUser = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
         token: generateToken(user._id),
       });
     } else {

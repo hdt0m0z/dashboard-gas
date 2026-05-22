@@ -88,12 +88,14 @@ mongoose
           broadcastToAll('gateway_status', { deviceId: d.deviceId, status: 'offline' });
           console.log(`[Watchdog] Thiết bị [${d.deviceId}] mất tín hiệu quá 75s!`);
           
-          await Alert.create({
+          const alert = await Alert.create({
             deviceId: d.deviceId,
+            nodeId: 0,
             type: 'connection',
             message: 'Mất kết nối đột ngột (Gateway)',
             isResolved: false
           });
+          broadcastToAll('new_alert', alert);
         }
 
         // 2. Check Nodes
@@ -104,13 +106,14 @@ mongoose
             global.nodeStatusMap.set(key, false);
             const [deviceId, nodeId] = key.split(':');
             
-            await Alert.create({
+            const alert = await Alert.create({
               deviceId,
               nodeId: parseInt(nodeId),
               type: 'connection',
-              message: `Mất kết nối Node (Zone ${nodeId === '1' ? 'A' : 'B'})`,
+              message: `Mất kết nối Node (Node ${nodeId})`,
               isResolved: false
             });
+            broadcastToAll('new_alert', alert);
             console.log(`[Watchdog] Node [${key}] mất tín hiệu quá 75s!`);
           }
         }

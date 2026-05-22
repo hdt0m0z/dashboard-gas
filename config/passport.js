@@ -28,15 +28,8 @@ passport.use(
             }
         }
 
-        // Nếu mới hoàn toàn
-        const newUser = new User({
-          googleId: profile.id,
-          name: profile.displayName,
-          email: profile.emails ? profile.emails[0].value : `google_${profile.id}@gmail.com`,
-        });
-        
-        await newUser.save();
-        return done(null, newUser);
+        // Bỏ chức năng tự động tạo user
+        return done(null, false, { message: 'Tài khoản chưa được phân quyền truy cập hệ thống' });
       } catch (err) {
         return done(err, false);
       }

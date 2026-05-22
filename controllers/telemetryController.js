@@ -154,8 +154,8 @@ exports.getUptime = async (req, res) => {
 
         incidents.forEach(inc => {
             if (inc.message.includes('Gateway')) gwIncidents++;
-            else if (inc.message.includes('Zone A') || inc.nodeId === 1) node1Incidents++;
-            else if (inc.message.includes('Zone B') || inc.nodeId === 2) node2Incidents++;
+            else if (inc.message.includes('Node 1') || inc.nodeId === 1) node1Incidents++;
+            else if (inc.message.includes('Node 2') || inc.nodeId === 2) node2Incidents++;
         });
 
         res.json({

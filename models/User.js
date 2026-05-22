@@ -23,10 +23,12 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
-  department: {
+  role: {
     type: String,
-    default: ""
+    enum: ['admin', 'user'],
+    default: 'user'
   },
+
   googleId: {
     type: String,
     default: null

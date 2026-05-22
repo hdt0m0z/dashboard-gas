@@ -39,12 +39,15 @@ const handleStatusUpdate = async (deviceId, payload) => {
   );
 
   if (device && device.status === 'offline' && (status || 'online') === 'online') {
-    await Alert.create({
+    const alert = await Alert.create({
       deviceId,
+      nodeId: 0,
       type: 'connection',
-      message: 'Đã kết nối lại (Gateway)',
+      message: 'Reconnected (Gateway)',
       isResolved: true
     });
+    const { broadcastToAll } = require('./socketService');
+    broadcastToAll('new_alert', alert);
   }
   console.log(`✅ Updated status for device ${deviceId}`);
 };
@@ -60,13 +63,15 @@ const handleTelemetryUpdate = async (deviceId, payload) => {
     if (global.nodeStatusMap.get(key) === false) {
       // Reconnected
       global.nodeStatusMap.set(key, true);
-      await Alert.create({
+      const alert = await Alert.create({
         deviceId,
         nodeId: parseInt(nodeId),
         type: 'connection',
-        message: `Đã kết nối lại (Zone ${nodeId === 1 || nodeId === '1' ? 'A' : 'B'})`,
+        message: `Reconnected (Node ${nodeId})`,
         isResolved: true
       });
+      const { broadcastToAll } = require('./socketService');
+      broadcastToAll('new_alert', alert);
     } else {
       global.nodeStatusMap.set(key, true);
     }
@@ -109,6 +114,8 @@ const handleTelemetryUpdate = async (deviceId, payload) => {
         message: alertMessage.join(' '),
       });
       await alert.save();
+      const { broadcastToAll } = require('./socketService');
+      broadcastToAll('new_alert', alert);
       console.log(`⚠️ Alert created for device ${deviceId}: ${alert.message}`);
     }
   }
